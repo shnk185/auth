@@ -48,32 +48,34 @@ public class ServiceAuthConfigService {
 
     private List<AuthMethod> createLogInMethods(ServiceAuthConfig serviceAuthConfig, ServiceAuthConfigEntity serviceAuthConfigEntity) {
         List<AuthMethod> loginMethods = new ArrayList<>();
-        if (serviceAuthConfig.getLoginMethods() != null) {
-            for (AuthMethod authMethod: serviceAuthConfig.getLoginMethods()) {
-                ServiceAuthConfigLogInMethodEntity serviceAuthConfigLogInMethodEntity = ServiceAuthConfigLogInMethodEntity
-                        .builder()
-                        .serviceAuthConfigId(serviceAuthConfigEntity.getId())
-                        .authMethod(authMethod)
-                        .build();
-                serviceAuthConfigLogInMethodRepository.save(serviceAuthConfigLogInMethodEntity);
-                loginMethods.add(serviceAuthConfigLogInMethodEntity.getAuthMethod());
-            }
+        if (serviceAuthConfig.getLoginMethods() == null) {
+            return loginMethods;
+        }
+        for (AuthMethod authMethod: serviceAuthConfig.getLoginMethods()) {
+            ServiceAuthConfigLogInMethodEntity serviceAuthConfigLogInMethodEntity = ServiceAuthConfigLogInMethodEntity
+                    .builder()
+                    .serviceAuthConfigId(serviceAuthConfigEntity.getId())
+                    .authMethod(authMethod)
+                    .build();
+            serviceAuthConfigLogInMethodRepository.save(serviceAuthConfigLogInMethodEntity);
+            loginMethods.add(serviceAuthConfigLogInMethodEntity.getAuthMethod());
         }
         return loginMethods;
     }
 
     private List<AuthMethod> createSignUpMethods(ServiceAuthConfig serviceAuthConfig, ServiceAuthConfigEntity serviceAuthConfigEntity) {
         List<AuthMethod> signUpMethods = new ArrayList<>();
-        if (serviceAuthConfig.getSignUpMethods() != null) {
-            for (AuthMethod authMethod: serviceAuthConfig.getSignUpMethods()) {
-                ServiceAuthConfigSignUpMethodEntity serviceAuthConfigSignUpMethodEntity = ServiceAuthConfigSignUpMethodEntity
-                        .builder()
-                        .serviceAuthConfigId(serviceAuthConfigEntity.getId())
-                        .authMethod(authMethod)
-                        .build();
-                serviceAuthConfigSignUpMethodRepository.save(serviceAuthConfigSignUpMethodEntity);
-                signUpMethods.add(serviceAuthConfigSignUpMethodEntity.getAuthMethod());
-            }
+        if (serviceAuthConfig.getSignUpMethods() == null) {
+            return signUpMethods;
+        }
+        for (AuthMethod authMethod: serviceAuthConfig.getSignUpMethods()) {
+            ServiceAuthConfigSignUpMethodEntity serviceAuthConfigSignUpMethodEntity = ServiceAuthConfigSignUpMethodEntity
+                    .builder()
+                    .serviceAuthConfigId(serviceAuthConfigEntity.getId())
+                    .authMethod(authMethod)
+                    .build();
+            serviceAuthConfigSignUpMethodRepository.save(serviceAuthConfigSignUpMethodEntity);
+            signUpMethods.add(serviceAuthConfigSignUpMethodEntity.getAuthMethod());
         }
         return signUpMethods;
     }

@@ -13,4 +13,11 @@ public class KeyUtil {
         log.info("generated sign up verify key: {}", key);
         return key;
     }
+
+    public static String generateSignUpVerifyAttemptsKey(Long userId) {
+        String key = String.join(DelimiterConstants.UNDERSCORE, KeyConstants.AUTH_SERVICE, KeyConstants.VERIFICATION_CODE,
+                KeyConstants.ATTEMPTS, KeyConstants.USER_ID, String.valueOf(userId));
+        log.info("generated sign up verify attempts key: {}", key);
+        return key;
+    }
 }

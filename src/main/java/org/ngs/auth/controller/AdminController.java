@@ -18,7 +18,7 @@ public class AdminController {
     @Autowired
     private ServiceAuthConfigService serviceAuthConfigService;
 
-    @PostMapping
+    @PostMapping("/service-config")
     public ResponseEntity<ServiceAuthConfig> createServiceAuthConfig(@RequestBody ServiceAuthConfig serviceAuthConfig) {
         log.info("service auth config create request {}", serviceAuthConfig);
         ServiceAuthConfig response = serviceAuthConfigService.createServiceAuthConfig(serviceAuthConfig);

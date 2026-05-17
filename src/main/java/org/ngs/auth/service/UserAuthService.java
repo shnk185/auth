@@ -1,16 +1,17 @@
 package org.ngs.auth.service;
 
 import jakarta.transaction.Transactional;
-import org.ngs.auth.dto.UserCreateRequest;
-import org.ngs.auth.dto.UserCreateResponse;
+import org.ngs.auth.dto.*;
 import org.ngs.auth.entity.UserEmailAuthEntity;
 import org.ngs.auth.entity.UserEntity;
 import org.ngs.auth.enums.AuthMethod;
+import org.ngs.auth.enums.TokenType;
 import org.ngs.auth.repository.UserEmailAuthRepository;
 import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.util.KeyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.ngs.auth.service.TokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,12 @@ public class UserAuthService {
 
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private TokenService tokenService;
 
     @Transactional
     public UserCreateResponse createUser(UserCreateRequest userCreateRequest) {
@@ -59,5 +66,87 @@ public class UserAuthService {
                 .authMethod(userEntity.getAuthMethod())
                 .email(userEmailAuthEntity.getEmail())
                 .build();
+    }
+
+    public UserVerificationResponse verifyUser(UserVerifyRequest userVerifyRequest) {
+        String otp = redisTemplate.opsForValue().get(KeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
+        if (otp == null) {
+            throw new RuntimeException("verification failed");
+        }
+
+        boolean verified = otp.equals(userVerifyRequest.getVerificationCode());
+        if (verified) {
+            UserEntity userEntity = userRepository.findById(userVerifyRequest.getUserId()).orElseThrow();
+            userEntity.setVerified(true);
+            userRepository.save(userEntity);
+            return UserVerificationResponse.builder()
+                    .verified(true)
+                    .userId(userVerifyRequest.getUserId())
+                    .build();
+        }
+        Long remainingAttempts = getRemainingAttempts(userVerifyRequest);
+
+        return UserVerificationResponse.builder()
+                .verified(false)
+                .userId(userVerifyRequest.getUserId())
+                .attemptsRemaining(remainingAttempts)
+                .build();
+
+    }
+
+    private Long getRemainingAttempts(UserVerifyRequest userVerifyRequest) {
+        String verificationAttemptKey = KeyUtil.generateSignUpVerifyAttemptsKey(userVerifyRequest.getUserId());
+        String verificationAttempts = redisTemplate.opsForValue().get(verificationAttemptKey);
+        Long remainingAttempts = 4L;
+        if (verificationAttempts == null) {
+            redisTemplate.opsForValue().set(verificationAttemptKey, "4", 24, TimeUnit.HOURS);
+        } else {
+            remainingAttempts = redisTemplate.opsForValue().decrement(verificationAttempts);
+            if (remainingAttempts == 0) {
+                redisTemplate.delete(KeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
+            }
+        }
+        return remainingAttempts;
+    }
+
+    public UserLoginResponse loginUser(UserLoginRequest userLoginRequest) {
+        if (userLoginRequest.getUserName() == null && userLoginRequest.getEmail() == null) {
+            throw new RuntimeException("invalid credentials");
+        }
+
+        UserEntity userEntity = null;
+        UserEmailAuthEntity userEmailAuthEntity = null;
+        if (userLoginRequest.getUserName() != null) {
+            userEntity = userRepository.findByUserName(userLoginRequest.getUserName());
+            validateUser(userEntity);
+            userEmailAuthEntity = userEmailAuthRepository.findByUserId(userEntity.getId());
+        } else {
+            userEmailAuthEntity = userEmailAuthRepository.findByEmail(userLoginRequest.getEmail());
+            if (userEmailAuthEntity == null) {
+                throw new RuntimeException("invalid credentials");
+            }
+            userEntity = userRepository.findById(userEmailAuthEntity.getUserId()).orElseThrow();
+            validateUser(userEntity);
+        }
+
+        if (!userEmailAuthEntity.getPassword().equals(passwordEncoder.encode(userLoginRequest.getPassword()))) {
+            throw new RuntimeException("invalid credentials");
+        }
+
+        String jwtToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
+        Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
+        return UserLoginResponse.builder()
+                .userId(userEntity.getId())
+                .userName(userEntity.getUserName())
+                .userName(userEmailAuthEntity.getEmail())
+                .accessToken(Token.builder().token(jwtToken).tokenType(TokenType.ACCESS).build())
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    private void validateUser(UserEntity userEntity) {
+        if (userEntity == null || !userEntity.getVerified()) {
+            throw new RuntimeException("invalid user");
+        }
     }
 }
