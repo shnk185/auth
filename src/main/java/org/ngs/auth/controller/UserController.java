@@ -5,10 +5,7 @@ import org.ngs.auth.dto.*;
 import org.ngs.auth.service.UserAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -41,4 +38,13 @@ public class UserController {
         log.info("user login response {}", response);
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/sessions")
+    public ResponseEntity<UserLogoutResponse> logoutUser(@RequestBody UserLogoutRequest userLogoutRequest) {
+        log.info("user logout request {}", userLogoutRequest);
+        UserLogoutResponse response = userAuthService.logoutUser(userLogoutRequest);
+        log.info("user logout response {}", response);
+        return ResponseEntity.ok(response);
+    }
+
 }

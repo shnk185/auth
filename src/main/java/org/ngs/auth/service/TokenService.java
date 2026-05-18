@@ -26,7 +26,7 @@ public class TokenService {
     @Autowired
     private SecureRandom secureRandom;
 
-    @Value("token.refresh.expiration-time-ms")
+    @Value("${token.refresh.expiration-time-ms}")
     private Long refreshTokenExpirationTimeMs;
 
     public Token generateRefreshToken(Long userId) {

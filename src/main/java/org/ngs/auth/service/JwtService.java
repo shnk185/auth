@@ -16,10 +16,10 @@ public class JwtService {
 
     private final SecretKey secretKey;
 
-    @Value("app.jwt.expiration-ms")
+    @Value("${app.jwt.expiration-ms}")
     private Long expirationMS;
 
-    public JwtService(@Value("app.jwt.secret") String jwtSecret) {
+    public JwtService(@Value("${app.jwt.secret}") String jwtSecret) {
         byte[] decoded = Base64.getDecoder().decode(jwtSecret);
         this.secretKey = Keys.hmacShaKeyFor(decoded);
     }

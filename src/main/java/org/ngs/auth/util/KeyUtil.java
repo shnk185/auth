@@ -20,4 +20,11 @@ public class KeyUtil {
         log.info("generated sign up verify attempts key: {}", key);
         return key;
     }
+
+    public static String generateLogoutKey(Long userId) {
+        String key = String.join(DelimiterConstants.UNDERSCORE, KeyConstants.AUTH_SERVICE, KeyConstants.LOG_OUT,
+                KeyConstants.USER_ID, String.valueOf(userId));
+        log.info("generated log out key {}", key);
+        return key;
+    }
 }

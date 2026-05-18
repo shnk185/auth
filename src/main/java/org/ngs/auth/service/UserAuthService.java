@@ -1,6 +1,7 @@
 package org.ngs.auth.service;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.dto.*;
 import org.ngs.auth.entity.UserEmailAuthEntity;
 import org.ngs.auth.entity.UserEntity;
@@ -11,12 +12,14 @@ import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.util.KeyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.ngs.auth.service.TokenService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class UserAuthService {
 
@@ -69,33 +72,38 @@ public class UserAuthService {
     }
 
     public UserVerificationResponse verifyUser(UserVerifyRequest userVerifyRequest) {
-        String otp = redisTemplate.opsForValue().get(KeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
+        String otp = redisTemplate.opsForValue().get(KeyUtil.generateSignUpVerifyKey(userId));
         if (otp == null) {
             throw new RuntimeException("verification failed");
         }
 
+
         boolean verified = otp.equals(userVerifyRequest.getVerificationCode());
         if (verified) {
-            UserEntity userEntity = userRepository.findById(userVerifyRequest.getUserId()).orElseThrow();
+            UserEntity userEntity = userRepository.findById(userId).orElseThrow();
             userEntity.setVerified(true);
             userRepository.save(userEntity);
             return UserVerificationResponse.builder()
                     .verified(true)
-                    .userId(userVerifyRequest.getUserId())
+                    .userId(userId)
                     .build();
         }
         Long remainingAttempts = getRemainingAttempts(userVerifyRequest);
 
         return UserVerificationResponse.builder()
                 .verified(false)
-                .userId(userVerifyRequest.getUserId())
+                .userId(userId)
                 .attemptsRemaining(remainingAttempts)
                 .build();
 
     }
 
     private Long getRemainingAttempts(UserVerifyRequest userVerifyRequest) {
-        String verificationAttemptKey = KeyUtil.generateSignUpVerifyAttemptsKey(userVerifyRequest.getUserId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
+        String verificationAttemptKey = KeyUtil.generateSignUpVerifyAttemptsKey(userId);
         String verificationAttempts = redisTemplate.opsForValue().get(verificationAttemptKey);
         Long remainingAttempts = 4L;
         if (verificationAttempts == null) {
@@ -103,7 +111,7 @@ public class UserAuthService {
         } else {
             remainingAttempts = redisTemplate.opsForValue().decrement(verificationAttempts);
             if (remainingAttempts == 0) {
-                redisTemplate.delete(KeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
+                redisTemplate.delete(KeyUtil.generateSignUpVerifyKey(userId));
             }
         }
         return remainingAttempts;
@@ -148,5 +156,12 @@ public class UserAuthService {
         if (userEntity == null || !userEntity.getVerified()) {
             throw new RuntimeException("invalid user");
         }
+    }
+
+    public UserLogoutResponse logoutUser(UserLogoutRequest userLogoutRequest) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
+        log.info("userId {}", userId);
+        return null;
     }
 }

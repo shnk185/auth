@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserVerifyRequest {
-    private Long userId;
+public class UserVerifyRequest extends BaseRequest {
     private String verificationCode;
 }
