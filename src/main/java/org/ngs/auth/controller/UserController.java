@@ -1,5 +1,6 @@
 package org.ngs.auth.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.dto.*;
 import org.ngs.auth.service.UserAuthService;
@@ -40,9 +41,9 @@ public class UserController {
     }
 
     @DeleteMapping("/sessions")
-    public ResponseEntity<UserLogoutResponse> logoutUser(@RequestBody UserLogoutRequest userLogoutRequest) {
-        log.info("user logout request {}", userLogoutRequest);
-        UserLogoutResponse response = userAuthService.logoutUser(userLogoutRequest);
+    public ResponseEntity<UserLogoutResponse> logoutUser(HttpServletRequest request) {
+        log.info("user logout request {}", request);
+        UserLogoutResponse response = userAuthService.logoutUser();
         log.info("user logout response {}", response);
         return ResponseEntity.ok(response);
     }

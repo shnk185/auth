@@ -44,6 +44,7 @@ public class TokenService {
                 .build();
         userTokenMappingRepository.save(userTokenMappingEntity);
         return Token.builder()
+                .tokenType(TokenType.REFRESH)
                 .token(generatedToken)
                 .expiresAt(expiry)
                 .build();

@@ -11,7 +11,7 @@ import java.security.SecureRandom;
 public class SecurityBeanConfig {
     @Bean
     public PasswordEncoder createPasswordEncoder() {
-        return new BCryptPasswordEncoder(24);
+        return new BCryptPasswordEncoder(12);
     }
 
     @Bean

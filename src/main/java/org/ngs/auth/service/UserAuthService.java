@@ -72,8 +72,7 @@ public class UserAuthService {
     }
 
     public UserVerificationResponse verifyUser(UserVerifyRequest userVerifyRequest) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = (Long) auth.getPrincipal();
+        Long userId = userVerifyRequest.getUserId();
         String otp = redisTemplate.opsForValue().get(KeyUtil.generateSignUpVerifyKey(userId));
         if (otp == null) {
             throw new RuntimeException("verification failed");
@@ -101,17 +100,15 @@ public class UserAuthService {
     }
 
     private Long getRemainingAttempts(UserVerifyRequest userVerifyRequest) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = (Long) auth.getPrincipal();
-        String verificationAttemptKey = KeyUtil.generateSignUpVerifyAttemptsKey(userId);
+        String verificationAttemptKey = KeyUtil.generateSignUpVerifyAttemptsKey(userVerifyRequest.getUserId());
         String verificationAttempts = redisTemplate.opsForValue().get(verificationAttemptKey);
         Long remainingAttempts = 4L;
         if (verificationAttempts == null) {
             redisTemplate.opsForValue().set(verificationAttemptKey, "4", 24, TimeUnit.HOURS);
         } else {
-            remainingAttempts = redisTemplate.opsForValue().decrement(verificationAttempts);
+            remainingAttempts = redisTemplate.opsForValue().decrement(verificationAttemptKey);
             if (remainingAttempts == 0) {
-                redisTemplate.delete(KeyUtil.generateSignUpVerifyKey(userId));
+                redisTemplate.delete(KeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
             }
         }
         return remainingAttempts;
@@ -137,7 +134,7 @@ public class UserAuthService {
             validateUser(userEntity);
         }
 
-        if (!userEmailAuthEntity.getPassword().equals(passwordEncoder.encode(userLoginRequest.getPassword()))) {
+        if (!passwordEncoder.matches(userLoginRequest.getPassword(), userEmailAuthEntity.getPassword())) {
             throw new RuntimeException("invalid credentials");
         }
 
@@ -158,7 +155,7 @@ public class UserAuthService {
         }
     }
 
-    public UserLogoutResponse logoutUser(UserLogoutRequest userLogoutRequest) {
+    public UserLogoutResponse logoutUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
         log.info("userId {}", userId);

@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserVerifyRequest extends BaseRequest {
     private String verificationCode;
+    private Long userId;
 }

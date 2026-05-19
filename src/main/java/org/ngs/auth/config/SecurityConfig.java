@@ -31,11 +31,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/users").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/verify").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/sessions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/error").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(exception -> exception.authenticationEntryPoint((
-                        (request, response, authException) -> response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
-                )));
+                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
     }
 }
