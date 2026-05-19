@@ -66,4 +66,12 @@ public class TokenService {
         secureRandom.nextBytes(tokenBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes);
     }
+
+    public long revokeRefreshToken(Long userId) {
+        UserTokenMappingEntity userTokenMappingEntity = userTokenMappingRepository.findByUserId(userId);
+        userTokenMappingEntity.setRevokedAt(new Date().getTime());
+        userTokenMappingRepository.save(userTokenMappingEntity);
+        log.info("refresh token for user {} revoked", userId);
+        return userTokenMappingEntity.getRevokedAt();
+    }
 }

@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -137,6 +138,7 @@ public class UserAuthService {
         if (!passwordEncoder.matches(userLoginRequest.getPassword(), userEmailAuthEntity.getPassword())) {
             throw new RuntimeException("invalid credentials");
         }
+        redisTemplate.delete(KeyUtil.generateLogoutKey(userEntity.getId()));
 
         String jwtToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
@@ -158,7 +160,14 @@ public class UserAuthService {
     public UserLogoutResponse logoutUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
-        log.info("userId {}", userId);
-        return null;
+        log.info("logging out user {}", userId);
+        redisTemplate.opsForValue().set(KeyUtil.generateLogoutKey(userId), String.valueOf(new Date().getTime()), 1, TimeUnit.HOURS);
+        long revokedAt = tokenService.revokeRefreshToken(userId);
+
+        return UserLogoutResponse.builder()
+                .userId(userId)
+                .loggedOut(true)
+                .loggedOutAt(revokedAt)
+                .build();
     }
 }
