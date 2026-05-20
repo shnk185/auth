@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -30,6 +31,7 @@ public class TokenService {
     private Long refreshTokenExpirationTimeMs;
 
     public Token generateRefreshToken(Long userId) {
+        revokeRefreshToken(userId);
         String generatedToken = generateToken();
         log.info("generated refresh token {} userId {}", generatedToken, userId);
         String tokenHash = hashToken(generatedToken);
@@ -68,7 +70,8 @@ public class TokenService {
     }
 
     public long revokeRefreshToken(Long userId) {
-        UserTokenMappingEntity userTokenMappingEntity = userTokenMappingRepository.findByUserId(userId);
+        UserTokenMappingEntity userTokenMappingEntity = userTokenMappingRepository.findByUserIdAndRevokedAtNull(userId);
+        if (userTokenMappingEntity == null) return -1L;
         userTokenMappingEntity.setRevokedAt(new Date().getTime());
         userTokenMappingRepository.save(userTokenMappingEntity);
         log.info("refresh token for user {} revoked", userId);

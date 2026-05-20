@@ -7,6 +7,7 @@ import org.ngs.auth.entity.UserEmailAuthEntity;
 import org.ngs.auth.entity.UserEntity;
 import org.ngs.auth.enums.AuthMethod;
 import org.ngs.auth.enums.TokenType;
+import org.ngs.auth.filter.AuthFilter;
 import org.ngs.auth.repository.UserEmailAuthRepository;
 import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.util.KeyUtil;
@@ -44,32 +45,16 @@ public class UserAuthService {
 
     @Transactional
     public UserCreateResponse createUser(UserCreateRequest userCreateRequest) {
-        UserEntity userEntity = UserEntity.builder()
-                .userName(userCreateRequest.getUserName())
-                .verified(false)
-                .authMethod(AuthMethod.EMAIL)
-                .build();
-
+        UserEntity userEntity = new UserEntity(userCreateRequest.getUserName(),  AuthMethod.EMAIL, false);
         userRepository.save(userEntity);
-
-        UserEmailAuthEntity userEmailAuthEntity = UserEmailAuthEntity.builder()
-                .email(userCreateRequest.getEmail())
-                .password(passwordEncoder.encode(userCreateRequest.getPassword()))
-                .userId(userEntity.getId())
-                .build();
-
+        UserEmailAuthEntity userEmailAuthEntity = new UserEmailAuthEntity(userEntity.getId(), userCreateRequest.getEmail(),
+                passwordEncoder.encode(userCreateRequest.getPassword()));
         userEmailAuthRepository.save(userEmailAuthEntity);
 
         redisTemplate.opsForValue().set(KeyUtil.generateSignUpVerifyKey(userEntity.getId()), "123456", 24, TimeUnit.HOURS);
 
-        return UserCreateResponse.builder()
-                .userName(userEntity.getUserName())
-                .userId(userEntity.getId())
-                .deleted(userEntity.isDeleted())
-                .verified(userEntity.getVerified())
-                .authMethod(userEntity.getAuthMethod())
-                .email(userEmailAuthEntity.getEmail())
-                .build();
+        return new UserCreateResponse(userEntity.getId(), userEntity.getUserName(), userEntity.getAuthMethod(),
+                userEntity.getVerified(), userEntity.isDeleted(), userEmailAuthEntity.getEmail());
     }
 
     public UserVerificationResponse verifyUser(UserVerifyRequest userVerifyRequest) {
@@ -79,40 +64,28 @@ public class UserAuthService {
             throw new RuntimeException("verification failed");
         }
 
-
         boolean verified = otp.equals(userVerifyRequest.getVerificationCode());
         if (verified) {
             UserEntity userEntity = userRepository.findById(userId).orElseThrow();
             userEntity.setVerified(true);
             userRepository.save(userEntity);
-            return UserVerificationResponse.builder()
-                    .verified(true)
-                    .userId(userId)
-                    .build();
+            return new UserVerificationResponse(userId, true, null);
         }
         Long remainingAttempts = getRemainingAttempts(userVerifyRequest);
 
-        return UserVerificationResponse.builder()
-                .verified(false)
-                .userId(userId)
-                .attemptsRemaining(remainingAttempts)
-                .build();
-
+        return new UserVerificationResponse(userId, false, remainingAttempts);
     }
 
     private Long getRemainingAttempts(UserVerifyRequest userVerifyRequest) {
         String verificationAttemptKey = KeyUtil.generateSignUpVerifyAttemptsKey(userVerifyRequest.getUserId());
-        String verificationAttempts = redisTemplate.opsForValue().get(verificationAttemptKey);
-        Long remainingAttempts = 4L;
-        if (verificationAttempts == null) {
+        Long verificationAttempts = redisTemplate.opsForValue().decrement(verificationAttemptKey);
+        if (verificationAttempts == -1) {
             redisTemplate.opsForValue().set(verificationAttemptKey, "4", 24, TimeUnit.HOURS);
-        } else {
-            remainingAttempts = redisTemplate.opsForValue().decrement(verificationAttemptKey);
-            if (remainingAttempts == 0) {
+            verificationAttempts = 4L;
+        } else if (verificationAttempts == 0) {
                 redisTemplate.delete(KeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
-            }
         }
-        return remainingAttempts;
+        return verificationAttempts;
     }
 
     public UserLoginResponse loginUser(UserLoginRequest userLoginRequest) {
@@ -141,14 +114,10 @@ public class UserAuthService {
         redisTemplate.delete(KeyUtil.generateLogoutKey(userEntity.getId()));
 
         String jwtToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
+        Token accessToken = new Token(TokenType.ACCESS, jwtToken, null);
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
-        return UserLoginResponse.builder()
-                .userId(userEntity.getId())
-                .userName(userEntity.getUserName())
-                .userName(userEmailAuthEntity.getEmail())
-                .accessToken(Token.builder().token(jwtToken).tokenType(TokenType.ACCESS).build())
-                .refreshToken(refreshToken)
-                .build();
+        return new UserLoginResponse(userEntity.getUserName(), userEmailAuthEntity.getEmail(), userEntity.getId(),
+                accessToken, refreshToken);
     }
 
     private void validateUser(UserEntity userEntity) {
@@ -163,11 +132,6 @@ public class UserAuthService {
         log.info("logging out user {}", userId);
         redisTemplate.opsForValue().set(KeyUtil.generateLogoutKey(userId), String.valueOf(new Date().getTime()), 1, TimeUnit.HOURS);
         long revokedAt = tokenService.revokeRefreshToken(userId);
-
-        return UserLogoutResponse.builder()
-                .userId(userId)
-                .loggedOut(true)
-                .loggedOutAt(revokedAt)
-                .build();
+        return new UserLogoutResponse(userId, true, revokedAt);
     }
 }

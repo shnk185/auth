@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserTokenMappingRepository extends JpaRepository<UserTokenMappingEntity, Long> {
-    UserTokenMappingEntity findByUserId(Long userId);
+    UserTokenMappingEntity findByUserIdAndRevokedAtNull(Long userId);
 }
