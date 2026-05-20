@@ -39,18 +39,10 @@ public class TokenService {
         log.info("generated refresh token hash {} userId {}", tokenHash, userId);
         Date now = new Date();
         Date expiry = new Date(now.getTime() + refreshTokenExpirationTimeMs);
-        UserTokenMappingEntity userTokenMappingEntity = UserTokenMappingEntity.builder()
-                .tokenType(TokenType.REFRESH)
-                .tokenHash(tokenHash)
-                .expiresAt(expiry)
-                .userId(userId)
-                .build();
+        UserTokenMappingEntity userTokenMappingEntity = new UserTokenMappingEntity(userId, tokenHash, TokenType.REFRESH,
+                expiry, null);
         userTokenMappingRepository.save(userTokenMappingEntity);
-        return Token.builder()
-                .tokenType(TokenType.REFRESH)
-                .token(generatedToken)
-                .expiresAt(expiry)
-                .build();
+        return new Token(TokenType.REFRESH, generatedToken, expiry);
     }
 
     private String hashToken(String token) {

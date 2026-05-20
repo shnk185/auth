@@ -29,21 +29,15 @@ public class ServiceAuthConfigService {
 
     @Transactional
     public ServiceAuthConfig createServiceAuthConfig(ServiceAuthConfig serviceAuthConfig) {
-        ServiceAuthConfigEntity serviceAuthConfigEntity = ServiceAuthConfigEntity.builder()
-                .name(serviceAuthConfig.getName())
-                .contextPath(serviceAuthConfig.getContextPath())
-                .build();
+        ServiceAuthConfigEntity serviceAuthConfigEntity = new ServiceAuthConfigEntity(serviceAuthConfig.getName(),
+                serviceAuthConfig.getContextPath());
         serviceAuthConfigRepository.save(serviceAuthConfigEntity);
 
         List<AuthMethod> signUpMethods = createSignUpMethods(serviceAuthConfig, serviceAuthConfigEntity);
         List<AuthMethod> loginMethods = createLogInMethods(serviceAuthConfig, serviceAuthConfigEntity);
 
-        return ServiceAuthConfig.builder()
-                .name(serviceAuthConfigEntity.getName())
-                .contextPath(serviceAuthConfigEntity.getContextPath())
-                .loginMethods(loginMethods)
-                .signUpMethods(signUpMethods)
-                .build();
+        return new ServiceAuthConfig(serviceAuthConfigEntity.getName(), serviceAuthConfigEntity.getContextPath(),
+                signUpMethods, loginMethods);
     }
 
     private List<AuthMethod> createLogInMethods(ServiceAuthConfig serviceAuthConfig, ServiceAuthConfigEntity serviceAuthConfigEntity) {
@@ -52,11 +46,8 @@ public class ServiceAuthConfigService {
             return loginMethods;
         }
         for (AuthMethod authMethod: serviceAuthConfig.getLoginMethods()) {
-            ServiceAuthConfigLogInMethodEntity serviceAuthConfigLogInMethodEntity = ServiceAuthConfigLogInMethodEntity
-                    .builder()
-                    .serviceAuthConfigId(serviceAuthConfigEntity.getId())
-                    .authMethod(authMethod)
-                    .build();
+            ServiceAuthConfigLogInMethodEntity serviceAuthConfigLogInMethodEntity = new ServiceAuthConfigLogInMethodEntity(
+                    serviceAuthConfigEntity.getId(), authMethod);
             serviceAuthConfigLogInMethodRepository.save(serviceAuthConfigLogInMethodEntity);
             loginMethods.add(serviceAuthConfigLogInMethodEntity.getAuthMethod());
         }
@@ -69,11 +60,8 @@ public class ServiceAuthConfigService {
             return signUpMethods;
         }
         for (AuthMethod authMethod: serviceAuthConfig.getSignUpMethods()) {
-            ServiceAuthConfigSignUpMethodEntity serviceAuthConfigSignUpMethodEntity = ServiceAuthConfigSignUpMethodEntity
-                    .builder()
-                    .serviceAuthConfigId(serviceAuthConfigEntity.getId())
-                    .authMethod(authMethod)
-                    .build();
+            ServiceAuthConfigSignUpMethodEntity serviceAuthConfigSignUpMethodEntity = new ServiceAuthConfigSignUpMethodEntity(
+                    serviceAuthConfigEntity.getId(), authMethod);
             serviceAuthConfigSignUpMethodRepository.save(serviceAuthConfigSignUpMethodEntity);
             signUpMethods.add(serviceAuthConfigSignUpMethodEntity.getAuthMethod());
         }
