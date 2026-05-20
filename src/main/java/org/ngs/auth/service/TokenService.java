@@ -2,6 +2,7 @@ package org.ngs.auth.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.dto.Token;
+import org.ngs.auth.dto.UserRefreshSessionRequest;
 import org.ngs.auth.entity.UserTokenMappingEntity;
 import org.ngs.auth.enums.TokenType;
 import org.ngs.auth.repository.UserTokenMappingRepository;
@@ -76,5 +77,14 @@ public class TokenService {
         userTokenMappingRepository.save(userTokenMappingEntity);
         log.info("refresh token for user {} revoked", userId);
         return userTokenMappingEntity.getRevokedAt();
+    }
+
+    public Long validateRefreshToken(String refreshToken) {
+        String hashedToken = hashToken(refreshToken);
+        UserTokenMappingEntity userTokenMappingEntity = userTokenMappingRepository.findByTokenHashAndRevokedAtNull(hashedToken);
+        if (userTokenMappingEntity == null) {
+            throw new RuntimeException("invalid refresh token");
+        }
+        return userTokenMappingEntity.getUserId();
     }
 }

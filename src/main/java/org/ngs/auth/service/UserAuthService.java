@@ -66,7 +66,7 @@ public class UserAuthService {
 
         boolean verified = otp.equals(userVerifyRequest.getVerificationCode());
         if (verified) {
-            UserEntity userEntity = userRepository.findById(userId).orElseThrow();
+            UserEntity userEntity = userRepository.findByIdAndIsDeletedFalse(userId).orElseThrow();
             userEntity.setVerified(true);
             userRepository.save(userEntity);
             return new UserVerificationResponse(userId, true, null);
@@ -96,7 +96,7 @@ public class UserAuthService {
         UserEntity userEntity = null;
         UserEmailAuthEntity userEmailAuthEntity = null;
         if (userLoginRequest.getUserName() != null) {
-            userEntity = userRepository.findByUserName(userLoginRequest.getUserName());
+            userEntity = userRepository.findByUserNameAndIsDeletedFalse(userLoginRequest.getUserName());
             validateUser(userEntity);
             userEmailAuthEntity = userEmailAuthRepository.findByUserId(userEntity.getId());
         } else {
@@ -104,7 +104,7 @@ public class UserAuthService {
             if (userEmailAuthEntity == null) {
                 throw new RuntimeException("invalid credentials");
             }
-            userEntity = userRepository.findById(userEmailAuthEntity.getUserId()).orElseThrow();
+            userEntity = userRepository.findByIdAndIsDeletedFalse(userEmailAuthEntity.getUserId()).orElseThrow();
             validateUser(userEntity);
         }
 
@@ -133,5 +133,26 @@ public class UserAuthService {
         redisTemplate.opsForValue().set(KeyUtil.generateLogoutKey(userId), String.valueOf(new Date().getTime()), 1, TimeUnit.HOURS);
         long revokedAt = tokenService.revokeRefreshToken(userId);
         return new UserLogoutResponse(userId, true, revokedAt);
+    }
+
+    public UserRefreshSessionResponse refreshSession(UserRefreshSessionRequest userRefreshSessionRequest) {
+        String refreshToken = userRefreshSessionRequest.getRefreshToken();
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new RuntimeException("invalid refresh token");
+        }
+        Long userId = tokenService.validateRefreshToken(userRefreshSessionRequest.getRefreshToken());
+        UserEmailAuthEntity userEmailAuthEntity = userEmailAuthRepository.findByUserId(userId);
+        String jwtToken = jwtService.generateToken(userId, userEmailAuthEntity.getEmail());
+        return new UserRefreshSessionResponse(new Token(TokenType.ACCESS, jwtToken, null));
+    }
+
+    public UserDeleteAccountResponse deleteUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
+        logoutUser();
+        UserEntity userEntity = userRepository.findByIdAndIsDeletedFalse(userId).orElseThrow();
+        userEntity.setDeleted(true);
+        userRepository.save(userEntity);
+        return new UserDeleteAccountResponse(userId, true);
     }
 }
