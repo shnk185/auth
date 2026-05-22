@@ -2,12 +2,20 @@ package org.ngs.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.ngs.auth.dto.*;
+import org.ngs.auth.dto.UserCreateRequest;
+import org.ngs.auth.dto.UserCreateResponse;
+import org.ngs.auth.dto.UserDeleteAccountResponse;
+import org.ngs.auth.dto.UserVerificationResponse;
+import org.ngs.auth.dto.UserVerifyRequest;
 import org.ngs.auth.service.UserAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -30,30 +38,6 @@ public class UserController {
         log.info("user verify request {}", userVerifyRequest);
         UserVerificationResponse response = userAuthService.verifyUser(userVerifyRequest);
         log.info("user verify response {}", response);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/sessions")
-    public ResponseEntity<UserLoginResponse> loginUser(@RequestBody UserLoginRequest userLoginRequest) {
-        log.info("user login request {}", userLoginRequest);
-        UserLoginResponse response = userAuthService.loginUser(userLoginRequest);
-        log.info("user login response {}", response);
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/sessions")
-    public ResponseEntity<UserLogoutResponse> logoutUser(HttpServletRequest request) {
-        log.info("user logout request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
-        UserLogoutResponse response = userAuthService.logoutUser();
-        log.info("user logout response {}", response);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/sessions/refresh")
-    public ResponseEntity<UserRefreshSessionResponse> refreshSession(UserRefreshSessionRequest userRefreshSessionRequest) {
-        log.info("user refresh session request {}", userRefreshSessionRequest);
-        UserRefreshSessionResponse response = userAuthService.refreshSession(userRefreshSessionRequest);
-        log.info("user refresh session response {}", response);
         return ResponseEntity.ok(response);
     }
 

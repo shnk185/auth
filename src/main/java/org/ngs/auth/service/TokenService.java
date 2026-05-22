@@ -2,21 +2,17 @@ package org.ngs.auth.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.dto.Token;
-import org.ngs.auth.dto.UserRefreshSessionRequest;
 import org.ngs.auth.entity.UserTokenMappingEntity;
 import org.ngs.auth.enums.TokenType;
 import org.ngs.auth.repository.UserTokenMappingRepository;
+import org.ngs.auth.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -35,7 +31,7 @@ public class TokenService {
         revokeRefreshToken(userId);
         String generatedToken = generateToken();
         log.info("generated refresh token {} userId {}", generatedToken, userId);
-        String tokenHash = hashToken(generatedToken);
+        String tokenHash = TokenUtil.hashToken(generatedToken);
         log.info("generated refresh token hash {} userId {}", tokenHash, userId);
         Date now = new Date();
         Date expiry = new Date(now.getTime() + refreshTokenExpirationTimeMs);
@@ -43,17 +39,6 @@ public class TokenService {
                 expiry, null);
         userTokenMappingRepository.save(userTokenMappingEntity);
         return new Token(TokenType.REFRESH, generatedToken, expiry);
-    }
-
-    private String hashToken(String token) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_16));
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("hash algorithm not found");
-            throw new RuntimeException("hash algorithm not found");
-        }
     }
 
     public String generateToken() {
@@ -72,7 +57,7 @@ public class TokenService {
     }
 
     public Long validateRefreshToken(String refreshToken) {
-        String hashedToken = hashToken(refreshToken);
+        String hashedToken = TokenUtil.hashToken(refreshToken);
         UserTokenMappingEntity userTokenMappingEntity = userTokenMappingRepository.findByTokenHashAndRevokedAtNull(hashedToken);
         if (userTokenMappingEntity == null) {
             throw new RuntimeException("invalid refresh token");

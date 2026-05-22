@@ -7,7 +7,6 @@ import org.ngs.auth.entity.UserEmailAuthEntity;
 import org.ngs.auth.entity.UserEntity;
 import org.ngs.auth.enums.AuthMethod;
 import org.ngs.auth.enums.TokenType;
-import org.ngs.auth.filter.AuthFilter;
 import org.ngs.auth.repository.UserEmailAuthRepository;
 import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.util.KeyUtil;
