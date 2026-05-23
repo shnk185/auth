@@ -27,4 +27,11 @@ public class KeyUtil {
         log.info("generated log out key {}", key);
         return key;
     }
+
+    public static String generateZaloCodeVerifierKey(String loginUUID) {
+        String key = String.join(DelimiterConstants.UNDERSCORE, KeyConstants.AUTH_SERVICE, KeyConstants.ZALO,
+                KeyConstants.CODE_VERIFIER, loginUUID);
+        log.info("generated zalo code verifier key {}", key);
+        return key;
+    }
 }

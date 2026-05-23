@@ -11,4 +11,8 @@ public class ZaloAuthConfig {
     private String authCodeUrl;
     private String appId;
     private String redirectUri;
+    private Integer codeVerifierTimeMs;
+    private String accessTokenUrl;
+    private String socialApiUrl;
+    private String khoaBiMatCuaUngDung;
 }

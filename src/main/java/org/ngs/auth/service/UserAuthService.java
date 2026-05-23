@@ -65,7 +65,7 @@ public class UserAuthService {
 
         boolean verified = otp.equals(userVerifyRequest.getVerificationCode());
         if (verified) {
-            UserEntity userEntity = userRepository.findByIdAndIsDeletedFalse(userId).orElseThrow();
+            UserEntity userEntity = userRepository.findByIdAndDeletedFalse(userId).orElseThrow();
             userEntity.setVerified(true);
             userRepository.save(userEntity);
             return new UserVerificationResponse(userId, true, null);
@@ -95,7 +95,7 @@ public class UserAuthService {
         UserEntity userEntity = null;
         UserEmailAuthEntity userEmailAuthEntity = null;
         if (userLoginRequest.getUserName() != null) {
-            userEntity = userRepository.findByUserNameAndIsDeletedFalse(userLoginRequest.getUserName());
+            userEntity = userRepository.findByUserNameAndDeletedFalse(userLoginRequest.getUserName());
             validateUser(userEntity);
             userEmailAuthEntity = userEmailAuthRepository.findByUserId(userEntity.getId());
         } else {
@@ -103,7 +103,7 @@ public class UserAuthService {
             if (userEmailAuthEntity == null) {
                 throw new RuntimeException("invalid credentials");
             }
-            userEntity = userRepository.findByIdAndIsDeletedFalse(userEmailAuthEntity.getUserId()).orElseThrow();
+            userEntity = userRepository.findByIdAndDeletedFalse(userEmailAuthEntity.getUserId()).orElseThrow();
             validateUser(userEntity);
         }
 
@@ -149,7 +149,7 @@ public class UserAuthService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
         logoutUser();
-        UserEntity userEntity = userRepository.findByIdAndIsDeletedFalse(userId).orElseThrow();
+        UserEntity userEntity = userRepository.findByIdAndDeletedFalse(userId).orElseThrow();
         userEntity.setDeleted(true);
         userRepository.save(userEntity);
         return new UserDeleteAccountResponse(userId, true);

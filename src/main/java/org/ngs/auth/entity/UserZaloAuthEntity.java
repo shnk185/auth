@@ -15,5 +15,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserZaloAuthEntity extends BaseEntity {
     private Long userId;
-
+    private String zaloUserId;
 }

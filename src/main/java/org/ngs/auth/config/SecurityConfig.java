@@ -33,6 +33,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/users/sessions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/sessions/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/sessions/oauth/zalo").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
