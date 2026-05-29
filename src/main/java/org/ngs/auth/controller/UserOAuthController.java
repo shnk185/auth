@@ -2,7 +2,7 @@ package org.ngs.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.ngs.auth.dto.UserLoginResponse;
+import org.ngs.auth.dto.response.UserLoginResponse;
 import org.ngs.auth.service.UserZaloAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;

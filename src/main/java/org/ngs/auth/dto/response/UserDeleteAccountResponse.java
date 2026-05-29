@@ -1,4 +1,4 @@
-package org.ngs.auth.dto;
+package org.ngs.auth.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserRefreshSessionRequest {
-    private String refreshToken;
+public class UserDeleteAccountResponse {
+    private Long userId;
+    private Boolean deleted;
 }

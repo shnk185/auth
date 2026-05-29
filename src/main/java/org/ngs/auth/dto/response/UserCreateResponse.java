@@ -1,4 +1,4 @@
-package org.ngs.auth.dto;
+package org.ngs.auth.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

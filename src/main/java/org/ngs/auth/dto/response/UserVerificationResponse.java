@@ -1,4 +1,4 @@
-package org.ngs.auth.dto;
+package org.ngs.auth.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserLogoutResponse {
-    public Long userId;
-    public boolean loggedOut;
-    public long loggedOutAt;
+public class UserVerificationResponse {
+    private Long userId;
+    private boolean verified;
+    private Long attemptsRemaining;
 }

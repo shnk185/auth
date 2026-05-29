@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.ngs.auth.dto.request.BaseRequest;
 import org.ngs.auth.enums.AuthMethod;
 
 import java.util.List;

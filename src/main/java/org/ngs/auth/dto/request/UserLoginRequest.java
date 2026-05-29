@@ -1,4 +1,4 @@
-package org.ngs.auth.dto;
+package org.ngs.auth.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserCreateRequest extends BaseRequest {
+public class UserLoginRequest extends BaseRequest {
+    private String userName;
     private String email;
     private String password;
-    private String userName;
 }

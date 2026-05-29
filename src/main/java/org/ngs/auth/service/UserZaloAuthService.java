@@ -5,7 +5,7 @@ import org.ngs.auth.config.ZaloAuthConfig;
 import org.ngs.auth.constant.Constants;
 import org.ngs.auth.constant.ZaloConstants;
 import org.ngs.auth.dto.Token;
-import org.ngs.auth.dto.UserLoginResponse;
+import org.ngs.auth.dto.response.UserLoginResponse;
 import org.ngs.auth.dto.external.ZaloAccessCodeResponse;
 import org.ngs.auth.dto.external.ZaloSocialResponse;
 import org.ngs.auth.entity.UserEntity;

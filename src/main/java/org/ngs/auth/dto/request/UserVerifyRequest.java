@@ -1,4 +1,4 @@
-package org.ngs.auth.dto;
+package org.ngs.auth.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserLoginResponse {
-    private String userName;
-    private String email;
+public class UserVerifyRequest extends BaseRequest {
+    private String verificationCode;
     private Long userId;
-    private Token accessToken;
-    private Token refreshToken;
 }
