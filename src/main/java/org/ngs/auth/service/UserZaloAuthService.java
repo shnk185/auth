@@ -4,9 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.config.ZaloAuthConfig;
 import org.ngs.auth.constant.Constants;
 import org.ngs.auth.constant.ZaloConstants;
+import org.ngs.auth.dto.Token;
 import org.ngs.auth.dto.UserLoginResponse;
 import org.ngs.auth.dto.external.ZaloAccessCodeResponse;
 import org.ngs.auth.dto.external.ZaloSocialResponse;
+import org.ngs.auth.entity.UserEntity;
+import org.ngs.auth.entity.UserZaloAuthEntity;
+import org.ngs.auth.enums.AuthMethod;
+import org.ngs.auth.enums.TokenType;
+import org.ngs.auth.repository.UserRepository;
+import org.ngs.auth.repository.UserZaloAuthRepository;
 import org.ngs.auth.service.external.zalo.ZaloAccessCodeService;
 import org.ngs.auth.service.external.zalo.ZaloSocialService;
 import org.ngs.auth.util.KeyUtil;
@@ -41,6 +48,18 @@ public class UserZaloAuthService {
     @Autowired
     private ZaloSocialService zaloSocialService;
 
+    @Autowired
+    private UserZaloAuthRepository userZaloAuthRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private TokenService tokenService;
+
     public RedirectView redirectToZalo() {
         String codeVerifierToken = generateCodeVerifier();
         String loginUUID = UUID.randomUUID().toString();
@@ -71,7 +90,7 @@ public class UserZaloAuthService {
         return codeVerifier;
     }
 
-    public UserLoginResponse loginWithZalo(String oauthCode, String loginUUID, String codeChallenge) {
+    public UserLoginResponse handleZaloCallback(String oauthCode, String loginUUID, String codeChallenge) {
         String codeVerifierToken = redisTemplate.opsForValue().get(KeyUtil.generateZaloCodeVerifierKey(loginUUID));
         if (codeVerifierToken == null) {
             throw new RuntimeException("zalo login expired");
@@ -79,9 +98,23 @@ public class UserZaloAuthService {
         ZaloAccessCodeResponse zaloAccessCodeResponse = zaloAccessCodeService.fetchAccessTokenFromCode(oauthCode, codeVerifierToken);
         ZaloSocialResponse zaloSocialResponse = zaloSocialService.fetchSocialResponse(zaloAccessCodeResponse.getAccessToken(),
                 Arrays.asList("id", "name"));
-        return new UserLoginResponse();
+
+        UserZaloAuthEntity userZaloAuthEntity = userZaloAuthRepository.findByZaloUserId(zaloSocialResponse.getId());
+        UserEntity userEntity = null;
+        if (userZaloAuthEntity == null) {
+            userEntity = new UserEntity(zaloSocialResponse.getName(), AuthMethod.ZALO, true);
+            userRepository.save(userEntity);
+            userZaloAuthEntity = new UserZaloAuthEntity(userEntity.getId(), zaloSocialResponse.getId());
+            userZaloAuthRepository.save(userZaloAuthEntity);
+        } else {
+            userEntity = userRepository.findById(userZaloAuthEntity.getUserId()).orElseThrow();
+        }
+
+        redisTemplate.delete(KeyUtil.generateLogoutKey(userEntity.getId()));
+        String jwtToken = jwtService.generateToken(userEntity.getId(), null);
+        Token accessToken = new Token(TokenType.ACCESS, jwtToken, null);
+        Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
+        return new UserLoginResponse(userEntity.getUserName(), null, userEntity.getId(),
+                accessToken, refreshToken);
     }
-
-
-
 }

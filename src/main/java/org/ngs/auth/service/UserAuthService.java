@@ -111,7 +111,6 @@ public class UserAuthService {
             throw new RuntimeException("invalid credentials");
         }
         redisTemplate.delete(KeyUtil.generateLogoutKey(userEntity.getId()));
-
         String jwtToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
         Token accessToken = new Token(TokenType.ACCESS, jwtToken, null);
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());

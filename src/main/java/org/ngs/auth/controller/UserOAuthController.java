@@ -31,7 +31,7 @@ public class UserOAuthController {
                                                           @RequestParam("state") String loginUUID,
                                                           @RequestParam("code_challenge") String codeChallenge) {
         log.info("user login with zalo callback code {} state {} codeChallenge {}", oauthCode, loginUUID, codeChallenge);
-        UserLoginResponse response = userZaloAuthService.loginWithZalo(oauthCode, loginUUID, codeChallenge);
+        UserLoginResponse response = userZaloAuthService.handleZaloCallback(oauthCode, loginUUID, codeChallenge);
         log.info("user login with zalo callback response {}", response);
         return ResponseEntity.ok(response);
     }
