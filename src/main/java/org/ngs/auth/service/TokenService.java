@@ -61,6 +61,8 @@ public class TokenService {
         UserTokenMappingEntity userTokenMappingEntity = userTokenMappingRepository.findByTokenHashAndRevokedAtNull(hashedToken);
         if (userTokenMappingEntity == null) {
             throw new RuntimeException("invalid refresh token");
+        } else if (userTokenMappingEntity.getExpiresAt().before(new Date())) {
+            throw new RuntimeException("expired refresh token");
         }
         return userTokenMappingEntity.getUserId();
     }

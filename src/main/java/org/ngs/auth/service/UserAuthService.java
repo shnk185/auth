@@ -15,6 +15,7 @@ import org.ngs.auth.enums.TokenType;
 import org.ngs.auth.repository.UserEmailAuthRepository;
 import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.util.KeyUtil;
+import org.ngs.auth.util.RedisKeyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -47,23 +49,35 @@ public class UserAuthService {
     @Autowired
     private TokenService tokenService;
 
+    @Autowired
+    private SecureRandom secureRandom;
+
     @Transactional
     public UserCreateResponse createUser(UserCreateRequest userCreateRequest) {
+        validateUserCreateRequest(userCreateRequest);
         UserEntity userEntity = new UserEntity(userCreateRequest.getUserName(),  AuthMethod.EMAIL, false);
         userRepository.save(userEntity);
         UserEmailAuthEntity userEmailAuthEntity = new UserEmailAuthEntity(userEntity.getId(), userCreateRequest.getEmail(),
                 passwordEncoder.encode(userCreateRequest.getPassword()));
         userEmailAuthRepository.save(userEmailAuthEntity);
 
-        redisTemplate.opsForValue().set(KeyUtil.generateSignUpVerifyKey(userEntity.getId()), "123456", 24, TimeUnit.HOURS);
+        redisTemplate.opsForValue().set(RedisKeyUtil.generateSignUpVerifyKey(userEntity.getId()), KeyUtil.generateSixDigitOtp(secureRandom), 24, TimeUnit.HOURS);
 
         return new UserCreateResponse(userEntity.getId(), userEntity.getUserName(), userEntity.getAuthMethod(),
                 userEntity.getVerified(), userEntity.isDeleted(), userEmailAuthEntity.getEmail());
     }
 
+    private void validateUserCreateRequest(UserCreateRequest userCreateRequest) {
+        if (userRepository.findByUserNameAndDeletedFalse(userCreateRequest.getUserName()) != null) {
+            throw new RuntimeException("user already exists");
+        } else if (userEmailAuthRepository.findByEmail(userCreateRequest.getEmail()) != null) {
+            throw new RuntimeException("user email already exists");
+        }
+    }
+
     public UserVerificationResponse verifyUser(UserVerifyRequest userVerifyRequest) {
         Long userId = userVerifyRequest.getUserId();
-        String otp = redisTemplate.opsForValue().get(KeyUtil.generateSignUpVerifyKey(userId));
+        String otp = redisTemplate.opsForValue().get(RedisKeyUtil.generateSignUpVerifyKey(userId));
         if (otp == null) {
             throw new RuntimeException("verification failed");
         }
@@ -81,13 +95,13 @@ public class UserAuthService {
     }
 
     private Long getRemainingAttempts(UserVerifyRequest userVerifyRequest) {
-        String verificationAttemptKey = KeyUtil.generateSignUpVerifyAttemptsKey(userVerifyRequest.getUserId());
+        String verificationAttemptKey = RedisKeyUtil.generateSignUpVerifyAttemptsKey(userVerifyRequest.getUserId());
         Long verificationAttempts = redisTemplate.opsForValue().decrement(verificationAttemptKey);
         if (verificationAttempts == -1) {
             redisTemplate.opsForValue().set(verificationAttemptKey, "4", 24, TimeUnit.HOURS);
             verificationAttempts = 4L;
         } else if (verificationAttempts == 0) {
-                redisTemplate.delete(KeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
+                redisTemplate.delete(RedisKeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
         }
         return verificationAttempts;
     }
@@ -115,7 +129,7 @@ public class UserAuthService {
         if (!passwordEncoder.matches(userLoginRequest.getPassword(), userEmailAuthEntity.getPassword())) {
             throw new RuntimeException("invalid credentials");
         }
-        redisTemplate.delete(KeyUtil.generateLogoutKey(userEntity.getId()));
+        redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
         String jwtToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
         Token accessToken = new Token(TokenType.ACCESS, jwtToken, null);
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
@@ -133,7 +147,7 @@ public class UserAuthService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
         log.info("logging out user {}", userId);
-        redisTemplate.opsForValue().set(KeyUtil.generateLogoutKey(userId), String.valueOf(new Date().getTime()), 1, TimeUnit.HOURS);
+        redisTemplate.opsForValue().set(RedisKeyUtil.generateLogoutKey(userId), String.valueOf(new Date().getTime()), 1, TimeUnit.HOURS);
         long revokedAt = tokenService.revokeRefreshToken(userId);
         return new UserLogoutResponse(userId, true, revokedAt);
     }

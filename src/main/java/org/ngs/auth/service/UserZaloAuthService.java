@@ -16,7 +16,7 @@ import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.repository.UserZaloAuthRepository;
 import org.ngs.auth.service.external.zalo.ZaloAccessCodeService;
 import org.ngs.auth.service.external.zalo.ZaloSocialService;
-import org.ngs.auth.util.KeyUtil;
+import org.ngs.auth.util.RedisKeyUtil;
 import org.ngs.auth.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -64,7 +64,7 @@ public class UserZaloAuthService {
         String codeVerifierToken = generateCodeVerifier();
         String loginUUID = UUID.randomUUID().toString();
         String zaloRedirectUrl = generateZaloRedirectUrl(loginUUID, TokenUtil.hashToken(codeVerifierToken));
-        redisTemplate.opsForValue().set(KeyUtil.generateZaloCodeVerifierKey(loginUUID), codeVerifierToken,
+        redisTemplate.opsForValue().set(RedisKeyUtil.generateZaloCodeVerifierKey(loginUUID), codeVerifierToken,
                 zaloAuthConfig.getCodeVerifierTimeMs(), TimeUnit.MILLISECONDS);
         return new RedirectView(zaloRedirectUrl);
     }
@@ -91,7 +91,7 @@ public class UserZaloAuthService {
     }
 
     public UserLoginResponse handleZaloCallback(String oauthCode, String loginUUID, String codeChallenge) {
-        String codeVerifierToken = redisTemplate.opsForValue().get(KeyUtil.generateZaloCodeVerifierKey(loginUUID));
+        String codeVerifierToken = redisTemplate.opsForValue().get(RedisKeyUtil.generateZaloCodeVerifierKey(loginUUID));
         if (codeVerifierToken == null) {
             throw new RuntimeException("zalo login expired");
         }
@@ -110,7 +110,7 @@ public class UserZaloAuthService {
             userEntity = userRepository.findById(userZaloAuthEntity.getUserId()).orElseThrow();
         }
 
-        redisTemplate.delete(KeyUtil.generateLogoutKey(userEntity.getId()));
+        redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
         String jwtToken = jwtService.generateToken(userEntity.getId(), null);
         Token accessToken = new Token(TokenType.ACCESS, jwtToken, null);
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());

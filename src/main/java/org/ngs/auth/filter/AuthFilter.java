@@ -8,7 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.ngs.auth.util.KeyUtil;
+import org.ngs.auth.util.RedisKeyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -58,7 +58,7 @@ public class AuthFilter extends OncePerRequestFilter {
                 Date expiresAt = claims.getExpiration();
                 Date now = new Date();
                 Long userId = Long.parseLong(claims.getSubject());
-                String logoutEpoch = redisTemplate.opsForValue().get(KeyUtil.generateLogoutKey(userId));
+                String logoutEpoch = redisTemplate.opsForValue().get(RedisKeyUtil.generateLogoutKey(userId));
                 if (expiresAt.before(now) || logoutEpoch != null) {
                     filterChain.doFilter(request, response);
                     return;
