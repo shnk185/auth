@@ -92,9 +92,7 @@ public class UserZaloAuthService {
 
     public UserLoginResponse handleZaloCallback(String oauthCode, String loginUUID, String codeChallenge) {
         String codeVerifierToken = redisTemplate.opsForValue().get(RedisKeyUtil.generateZaloCodeVerifierKey(loginUUID));
-        if (codeVerifierToken == null) {
-            throw new RuntimeException("zalo login expired");
-        }
+        validateCodeVerifier(codeChallenge, codeVerifierToken);
         ZaloAccessCodeResponse zaloAccessCodeResponse = zaloAccessCodeService.fetchAccessTokenFromCode(oauthCode, codeVerifierToken);
         ZaloSocialResponse zaloSocialResponse = zaloSocialService.fetchSocialResponse(zaloAccessCodeResponse.getAccessToken(),
                 Arrays.asList("id", "name"));
@@ -116,5 +114,14 @@ public class UserZaloAuthService {
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
         return new UserLoginResponse(userEntity.getUserName(), null, userEntity.getId(),
                 accessToken, refreshToken);
+    }
+
+    private void validateCodeVerifier(String codeChallenge, String codeVerifierToken) {
+        if (codeVerifierToken == null) {
+            throw new RuntimeException("zalo login expired");
+        }
+        if (!TokenUtil.hashToken(codeVerifierToken).equals(codeChallenge)) {
+            throw new RuntimeException("invalid code challenge");
+        }
     }
 }
