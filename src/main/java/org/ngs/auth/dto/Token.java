@@ -16,4 +16,5 @@ public class Token {
     private TokenType tokenType;
     private String token;
     private Date expiresAt;
+    private Long maxAge;
 }

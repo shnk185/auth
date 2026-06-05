@@ -1,21 +1,23 @@
 package org.ngs.auth.service;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.config.ZaloAuthConfig;
 import org.ngs.auth.constant.Constants;
+import org.ngs.auth.constant.CookieConstants;
 import org.ngs.auth.constant.ZaloConstants;
 import org.ngs.auth.dto.Token;
-import org.ngs.auth.dto.response.UserLoginResponse;
 import org.ngs.auth.dto.external.ZaloAccessCodeResponse;
 import org.ngs.auth.dto.external.ZaloSocialResponse;
 import org.ngs.auth.entity.UserEntity;
 import org.ngs.auth.entity.UserZaloAuthEntity;
 import org.ngs.auth.enums.AuthMethod;
-import org.ngs.auth.enums.TokenType;
 import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.repository.UserZaloAuthRepository;
 import org.ngs.auth.service.external.zalo.ZaloAccessCodeService;
 import org.ngs.auth.service.external.zalo.ZaloSocialService;
+import org.ngs.auth.util.CookieUtil;
 import org.ngs.auth.util.RedisKeyUtil;
 import org.ngs.auth.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.UUID;
@@ -90,7 +93,7 @@ public class UserZaloAuthService {
         return codeVerifier;
     }
 
-    public UserLoginResponse handleZaloCallback(String oauthCode, String loginUUID, String codeChallenge) {
+    public void handleZaloCallback(String oauthCode, String loginUUID, String codeChallenge, HttpServletResponse httpServletResponse) throws IOException {
         String codeVerifierToken = redisTemplate.opsForValue().get(RedisKeyUtil.generateZaloCodeVerifierKey(loginUUID));
         validateCodeVerifier(codeChallenge, codeVerifierToken);
         ZaloAccessCodeResponse zaloAccessCodeResponse = zaloAccessCodeService.fetchAccessTokenFromCode(oauthCode, codeVerifierToken);
@@ -109,11 +112,13 @@ public class UserZaloAuthService {
         }
 
         redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
-        String jwtToken = jwtService.generateToken(userEntity.getId(), null);
-        Token accessToken = new Token(TokenType.ACCESS, jwtToken, null);
+        Token accessToken = jwtService.generateToken(userEntity.getId(), null);
+        Cookie accessTokenCookie = CookieUtil.generateTokenCookie(CookieConstants.ACCESS_TOKEN, accessToken);
+        httpServletResponse.addCookie(accessTokenCookie);
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
-        return new UserLoginResponse(userEntity.getUserName(), null, userEntity.getId(),
-                accessToken, refreshToken);
+        Cookie refreshTokenCookie = CookieUtil.generateTokenCookie(CookieConstants.REFRESH_TOKEN, refreshToken);
+        httpServletResponse.addCookie(refreshTokenCookie);
+        httpServletResponse.sendRedirect("/");
     }
 
     private void validateCodeVerifier(String codeChallenge, String codeVerifierToken) {

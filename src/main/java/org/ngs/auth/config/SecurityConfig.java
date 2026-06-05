@@ -28,12 +28,13 @@ public class SecurityConfig {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/users").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/users/verify").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/users/sessions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/error").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/sessions/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/sessions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users/sessions/oauth/zalo").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/sessions/oauth/zalo/callback").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/sessions/refresh").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();

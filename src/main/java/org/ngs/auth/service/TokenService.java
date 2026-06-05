@@ -38,7 +38,7 @@ public class TokenService {
         UserTokenMappingEntity userTokenMappingEntity = new UserTokenMappingEntity(userId, tokenHash, TokenType.REFRESH,
                 expiry, null);
         userTokenMappingRepository.save(userTokenMappingEntity);
-        return new Token(TokenType.REFRESH, generatedToken, expiry);
+        return new Token(TokenType.REFRESH, generatedToken, expiry, refreshTokenExpirationTimeMs);
     }
 
     public String generateToken() {

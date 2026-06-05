@@ -3,6 +3,8 @@ package org.ngs.auth.service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.ngs.auth.dto.Token;
+import org.ngs.auth.enums.TokenType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,12 +26,12 @@ public class JwtService {
         this.secretKey = Keys.hmacShaKeyFor(decoded);
     }
 
-    public String generateToken(Long userId, String email) {
+    public Token generateToken(Long userId, String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMS);
         String jwt = Jwts.builder().subject(String.valueOf(userId)).claim("email", email).issuedAt(now)
                 .expiration(expiry).signWith(secretKey).compact();
         log.info("issued jwt {} for userId {}", jwt, userId);
-        return jwt;
+        return new Token(TokenType.ACCESS, jwt, expiry, expirationMS);
     }
 }

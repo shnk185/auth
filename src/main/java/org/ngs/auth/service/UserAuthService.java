@@ -130,8 +130,7 @@ public class UserAuthService {
             throw new RuntimeException("invalid credentials");
         }
         redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
-        String jwtToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
-        Token accessToken = new Token(TokenType.ACCESS, jwtToken, null);
+        Token accessToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
         return new UserLoginResponse(userEntity.getUserName(), userEmailAuthEntity.getEmail(), userEntity.getId(),
                 accessToken, refreshToken);
@@ -159,8 +158,8 @@ public class UserAuthService {
         }
         Long userId = tokenService.validateRefreshToken(userRefreshSessionRequest.getRefreshToken());
         UserEmailAuthEntity userEmailAuthEntity = userEmailAuthRepository.findByUserId(userId);
-        String jwtToken = jwtService.generateToken(userId, userEmailAuthEntity.getEmail());
-        return new UserRefreshSessionResponse(new Token(TokenType.ACCESS, jwtToken, null));
+        Token jwtToken = jwtService.generateToken(userId, userEmailAuthEntity.getEmail());
+        return new UserRefreshSessionResponse(jwtToken);
     }
 
     public UserDeleteAccountResponse deleteUser() {

@@ -1,19 +1,20 @@
 package org.ngs.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.ngs.auth.dto.response.UserLoginResponse;
 import org.ngs.auth.service.UserZaloAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
+
+import java.io.IOException;
 
 @Slf4j
 @RestController
 @RequestMapping("/users/sessions/oauth")
-public class UserOAuthController {
+public class UserOAuthZaloController {
 
     @Autowired
     private UserZaloAuthService userZaloAuthService;
@@ -26,14 +27,14 @@ public class UserOAuthController {
         return response;
     }
 
-    @PostMapping("/zalo/callback")
-    public ResponseEntity<UserLoginResponse> zaloCallBack(@RequestParam("code") String oauthCode,
+    @GetMapping("/zalo/callback")
+    public void zaloCallBack(@RequestParam("code") String oauthCode,
                                                           @RequestParam("state") String loginUUID,
-                                                          @RequestParam("code_challenge") String codeChallenge) {
+                                                          @RequestParam("code_challenge") String codeChallenge,
+                                                          HttpServletResponse httpServletResponse) throws IOException {
         log.info("user login with zalo callback code {} state {} codeChallenge {}", oauthCode, loginUUID, codeChallenge);
-        UserLoginResponse response = userZaloAuthService.handleZaloCallback(oauthCode, loginUUID, codeChallenge);
-        log.info("user login with zalo callback response {}", response);
-        return ResponseEntity.ok(response);
+        userZaloAuthService.handleZaloCallback(oauthCode, loginUUID, codeChallenge, httpServletResponse);
+        log.info("user login with zalo callback successful {}", httpServletResponse);
     }
 
 }
