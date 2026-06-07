@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.databind.ObjectMapper;
 
 import java.security.SecureRandom;
 
@@ -23,5 +24,10 @@ public class BeanConfig {
     @Bean
     public RestTemplate createRestTemplate() {
         return new RestTemplate();
+    }
+
+    @Bean
+    public ObjectMapper createObjectMapper() {
+        return new ObjectMapper();
     }
 }

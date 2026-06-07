@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Service
@@ -24,15 +25,20 @@ public class ZaloAccessCodeService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public ZaloAccessCodeResponse fetchAccessTokenFromCode(String oauthCode, String codeVerifierToken) {
         String url = zaloAuthConfig.getAccessTokenUrl();
         HttpHeaders httpHeaders = generateZaloAccessCodeHeaders();
         MultiValueMap<String, String> body = generateZaloAccessCodeBody(oauthCode, codeVerifierToken);
         HttpEntity<MultiValueMap<String, String>> httpEntity = new HttpEntity<>(body, httpHeaders);
         try {
-            ResponseEntity<ZaloAccessCodeResponse> response = restTemplate.postForEntity(url, httpEntity, ZaloAccessCodeResponse.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
-                ZaloAccessCodeResponse zaloAccessCodeResponse = response.getBody();
+                String rawResponse = response.getBody();
+                log.info("received raw zalo access code response {}", rawResponse);
+                ZaloAccessCodeResponse zaloAccessCodeResponse = objectMapper.readValue(rawResponse, ZaloAccessCodeResponse.class);
                 log.info("received zalo access code response {}", zaloAccessCodeResponse);
                 return zaloAccessCodeResponse;
             } else {

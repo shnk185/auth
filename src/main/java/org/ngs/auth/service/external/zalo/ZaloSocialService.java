@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -26,14 +27,19 @@ public class ZaloSocialService {
     @Autowired
     private ZaloAuthConfig zaloAuthConfig;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public ZaloSocialResponse fetchSocialResponse(String accessToken, List<String> fields) {
         String url = generateZaloSocialApiUrl(fields);
         HttpHeaders httpHeaders = generateZaloSocialApiHeaders(accessToken);
         HttpEntity<Void> httpEntity = new HttpEntity<>(httpHeaders);
         try {
-            ResponseEntity<ZaloSocialResponse> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, ZaloSocialResponse.class);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
-                ZaloSocialResponse zaloSocialResponse = response.getBody();
+                String rawResponse = response.getBody();
+                log.info("received raw zalo social api response {}", rawResponse);
+                ZaloSocialResponse zaloSocialResponse = objectMapper.readValue(rawResponse, ZaloSocialResponse.class);
                 log.info("received zalo social api response {}", zaloSocialResponse);
                 return zaloSocialResponse;
             } else {
