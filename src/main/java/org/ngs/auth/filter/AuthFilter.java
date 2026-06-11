@@ -5,9 +5,11 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.ngs.auth.constant.CookieConstants;
 import org.ngs.auth.util.RedisKeyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,9 +24,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -41,13 +41,13 @@ public class AuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header != null && header.startsWith("Bearer ")) {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        Optional<Cookie> accessTokenOptional = Arrays.stream(request.getCookies()).filter(x -> x.getName().equals(CookieConstants.ACCESS_TOKEN)).findFirst();
+        if (accessTokenOptional.isPresent()) {
             try {
-                String token = header.substring(7);
+                Cookie accessTokenCookie = accessTokenOptional.get();
+                log.info("extracted access token cookie {}", accessTokenCookie);
+                String token = accessTokenCookie.getValue();
 
                 Claims claims = Jwts.parser()
                         .verifyWith(secretKey)

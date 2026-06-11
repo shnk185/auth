@@ -9,8 +9,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.Base64;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -32,6 +35,6 @@ public class JwtService {
         String jwt = Jwts.builder().subject(String.valueOf(userId)).claim("email", email).issuedAt(now)
                 .expiration(expiry).signWith(secretKey).compact();
         log.info("issued jwt {} for userId {}", jwt, userId);
-        return new Token(TokenType.ACCESS, jwt, expiry, expirationMS);
+        return new Token(TokenType.ACCESS, jwt, expiry, TimeUnit.MILLISECONDS.toSeconds(expirationMS));
     }
 }
