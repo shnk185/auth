@@ -99,7 +99,9 @@ public class UserZaloAuthService {
         ZaloAccessCodeResponse zaloAccessCodeResponse = zaloAccessCodeService.fetchAccessTokenFromCode(oauthCode, codeVerifierToken);
         ZaloSocialResponse zaloSocialResponse = zaloSocialService.fetchSocialResponse(zaloAccessCodeResponse.getAccessToken(),
                 Arrays.asList("id", "name"));
-
+        if (zaloSocialResponse.getId() == null) {
+            throw new RuntimeException("zalo auth failed");
+        }
         UserZaloAuthEntity userZaloAuthEntity = userZaloAuthRepository.findByZaloUserId(zaloSocialResponse.getId());
         UserEntity userEntity = null;
         if (userZaloAuthEntity == null) {

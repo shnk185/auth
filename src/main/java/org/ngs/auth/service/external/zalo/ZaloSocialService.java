@@ -6,6 +6,7 @@ import org.ngs.auth.constant.DelimiterConstants;
 import org.ngs.auth.constant.ZaloConstants;
 import org.ngs.auth.dto.external.ZaloSocialResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -21,7 +22,9 @@ import java.util.List;
 @Service
 public class ZaloSocialService {
 
+
     @Autowired
+    @Qualifier("proxyRestTemplate")
     private RestTemplate restTemplate;
 
     @Autowired

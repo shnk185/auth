@@ -25,6 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -42,7 +43,8 @@ public class AuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        Optional<Cookie> accessTokenOptional = Arrays.stream(request.getCookies()).filter(x -> x.getName().equals(CookieConstants.ACCESS_TOKEN)).findFirst();
+        Optional<Cookie> accessTokenOptional = Stream.ofNullable(request.getCookies()).flatMap(Arrays::stream)
+                .filter(x -> x.getName().equals(CookieConstants.ACCESS_TOKEN)).findFirst();
         if (accessTokenOptional.isPresent()) {
             try {
                 Cookie accessTokenCookie = accessTokenOptional.get();
