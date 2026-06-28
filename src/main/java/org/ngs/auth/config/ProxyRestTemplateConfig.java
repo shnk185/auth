@@ -1,5 +1,6 @@
 package org.ngs.auth.config;
 
+import org.ngs.auth.config.properties.ProxyConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

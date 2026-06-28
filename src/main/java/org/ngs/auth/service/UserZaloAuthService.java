@@ -3,7 +3,7 @@ package org.ngs.auth.service;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.ngs.auth.config.ZaloAuthConfig;
+import org.ngs.auth.config.properties.ZaloAuthConfig;
 import org.ngs.auth.constant.Constants;
 import org.ngs.auth.constant.CookieConstants;
 import org.ngs.auth.constant.ZaloConstants;

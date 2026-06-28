@@ -1,7 +1,7 @@
 package org.ngs.auth.service.external.zalo;
 
 import lombok.extern.slf4j.Slf4j;
-import org.ngs.auth.config.ZaloAuthConfig;
+import org.ngs.auth.config.properties.ZaloAuthConfig;
 import org.ngs.auth.constant.DelimiterConstants;
 import org.ngs.auth.constant.ZaloConstants;
 import org.ngs.auth.dto.external.ZaloSocialResponse;

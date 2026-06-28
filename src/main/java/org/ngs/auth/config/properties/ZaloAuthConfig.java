@@ -1,4 +1,4 @@
-package org.ngs.auth.config;
+package org.ngs.auth.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

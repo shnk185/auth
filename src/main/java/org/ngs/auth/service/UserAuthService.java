@@ -52,6 +52,9 @@ public class UserAuthService {
     @Autowired
     private SecureRandom secureRandom;
 
+    @Autowired
+    private EmailSenderService emailSenderService;
+
     @Transactional
     public UserCreateResponse createUser(UserCreateRequest userCreateRequest) {
         validateUserCreateRequest(userCreateRequest);
@@ -61,8 +64,9 @@ public class UserAuthService {
                 passwordEncoder.encode(userCreateRequest.getPassword()));
         userEmailAuthRepository.save(userEmailAuthEntity);
 
-        redisTemplate.opsForValue().set(RedisKeyUtil.generateSignUpVerifyKey(userEntity.getId()), KeyUtil.generateSixDigitOtp(secureRandom), 24, TimeUnit.HOURS);
-
+        String otp = KeyUtil.generateSixDigitOtp(secureRandom);
+        redisTemplate.opsForValue().set(RedisKeyUtil.generateSignUpVerifyKey(userEntity.getId()), otp, 24, TimeUnit.HOURS);
+        emailSenderService.sendSignUpOtpEmail(userEmailAuthEntity.getEmail(), otp);
         return new UserCreateResponse(userEntity.getId(), userEntity.getUserName(), userEntity.getAuthMethod(),
                 userEntity.getVerified(), userEntity.isDeleted(), userEmailAuthEntity.getEmail());
     }
