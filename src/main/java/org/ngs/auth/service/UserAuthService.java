@@ -1,8 +1,10 @@
 package org.ngs.auth.service;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.ngs.auth.dto.*;
+import org.ngs.auth.dto.Token;
 import org.ngs.auth.dto.request.UserCreateRequest;
 import org.ngs.auth.dto.request.UserLoginRequest;
 import org.ngs.auth.dto.request.UserRefreshSessionRequest;
@@ -11,7 +13,6 @@ import org.ngs.auth.dto.response.*;
 import org.ngs.auth.entity.UserEmailAuthEntity;
 import org.ngs.auth.entity.UserEntity;
 import org.ngs.auth.enums.AuthMethod;
-import org.ngs.auth.enums.TokenType;
 import org.ngs.auth.repository.UserEmailAuthRepository;
 import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.util.KeyUtil;
@@ -23,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -44,13 +46,13 @@ public class UserAuthService {
     private RedisTemplate<String, String> redisTemplate;
 
     @Autowired
-    private JwtService jwtService;
-
-    @Autowired
     private TokenService tokenService;
 
     @Autowired
     private SecureRandom secureRandom;
+
+    @Autowired
+    private CookieService cookieService;
 
     @Autowired
     private EmailSenderService emailSenderService;
@@ -105,12 +107,12 @@ public class UserAuthService {
             redisTemplate.opsForValue().set(verificationAttemptKey, "4", 24, TimeUnit.HOURS);
             verificationAttempts = 4L;
         } else if (verificationAttempts == 0) {
-                redisTemplate.delete(RedisKeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
+            redisTemplate.delete(RedisKeyUtil.generateSignUpVerifyKey(userVerifyRequest.getUserId()));
         }
         return verificationAttempts;
     }
 
-    public UserLoginResponse loginUser(UserLoginRequest userLoginRequest) {
+    public void loginUser(UserLoginRequest userLoginRequest, HttpServletResponse httpServletResponse) throws IOException {
         if (userLoginRequest.getUserName() == null && userLoginRequest.getEmail() == null) {
             throw new RuntimeException("invalid credentials");
         }
@@ -134,10 +136,9 @@ public class UserAuthService {
             throw new RuntimeException("invalid credentials");
         }
         redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
-        Token accessToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
-        Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
-        return new UserLoginResponse(userEntity.getUserName(), userEmailAuthEntity.getEmail(), userEntity.getId(),
-                accessToken, refreshToken);
+        cookieService.setAccessAndRefreshTokenCookiesInResponse(userEntity.getId(), userEmailAuthEntity.getEmail(),
+                httpServletResponse);
+        httpServletResponse.sendRedirect("/");
     }
 
     private void validateUser(UserEntity userEntity) {
@@ -146,33 +147,33 @@ public class UserAuthService {
         }
     }
 
-    public UserLogoutResponse logoutUser() {
+    public void logoutUser(HttpServletResponse httpServletResponse) throws IOException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
         log.info("logging out user {}", userId);
         redisTemplate.opsForValue().set(RedisKeyUtil.generateLogoutKey(userId), String.valueOf(new Date().getTime()), 1, TimeUnit.HOURS);
-        long revokedAt = tokenService.revokeRefreshToken(userId);
-        return new UserLogoutResponse(userId, true, revokedAt);
+        tokenService.revokeRefreshToken(userId);
+        httpServletResponse.sendRedirect("/");
     }
 
-    public UserRefreshSessionResponse refreshSession(UserRefreshSessionRequest userRefreshSessionRequest) {
+    public void refreshSession(UserRefreshSessionRequest userRefreshSessionRequest, HttpServletResponse httpServletResponse) {
         String refreshToken = userRefreshSessionRequest.getRefreshToken();
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new RuntimeException("invalid refresh token");
         }
         Long userId = tokenService.validateRefreshToken(userRefreshSessionRequest.getRefreshToken());
+        redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userId));
         UserEmailAuthEntity userEmailAuthEntity = userEmailAuthRepository.findByUserId(userId);
-        Token jwtToken = jwtService.generateToken(userId, userEmailAuthEntity.getEmail());
-        return new UserRefreshSessionResponse(jwtToken);
+        cookieService.setAccessAndRefreshTokenCookiesInResponse(userId,
+                userEmailAuthEntity == null ? null : userEmailAuthEntity.getEmail(), httpServletResponse);
     }
 
-    public UserDeleteAccountResponse deleteUser() {
+    public void deleteUser(HttpServletResponse httpServletResponse) throws IOException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) auth.getPrincipal();
-        logoutUser();
+        logoutUser(httpServletResponse);
         UserEntity userEntity = userRepository.findByIdAndDeletedFalse(userId).orElseThrow();
         userEntity.setDeleted(true);
         userRepository.save(userEntity);
-        return new UserDeleteAccountResponse(userId, true);
     }
 }

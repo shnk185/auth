@@ -1,6 +1,7 @@
 package org.ngs.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.dto.request.UserCreateRequest;
 import org.ngs.auth.dto.response.UserCreateResponse;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.io.IOException;
 
 @Slf4j
 @RestController
@@ -42,10 +45,9 @@ public class UserController {
     }
 
     @DeleteMapping
-    public ResponseEntity<UserDeleteAccountResponse> deleteAccount(HttpServletRequest request) {
+    public void deleteAccount(HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
         log.info("user delete account request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
-        UserDeleteAccountResponse response = userAuthService.deleteUser();
-        log.info("user delete account response {}", response);
-        return ResponseEntity.ok(response);
+        userAuthService.deleteUser(httpServletResponse);
+        log.info("user delete account response {}", httpServletResponse);
     }
 }

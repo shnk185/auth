@@ -1,6 +1,7 @@
 package org.ngs.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.dto.request.UserLoginRequest;
 import org.ngs.auth.dto.response.UserLoginResponse;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+
 @Slf4j
 @RestController
 @RequestMapping("/users/sessions")
@@ -26,26 +29,23 @@ public class UserSessionController {
     private UserAuthService userAuthService;
 
     @PostMapping
-    public ResponseEntity<UserLoginResponse> loginUser(@RequestBody UserLoginRequest userLoginRequest) {
+    public void loginUser(@RequestBody UserLoginRequest userLoginRequest, HttpServletResponse httpServletResponse) throws IOException {
         log.info("user login request {}", userLoginRequest);
-        UserLoginResponse response = userAuthService.loginUser(userLoginRequest);
-        log.info("user login response {}", response);
-        return ResponseEntity.ok(response);
+        userAuthService.loginUser(userLoginRequest, httpServletResponse);
+        log.info("user login response {}", httpServletResponse);
     }
 
     @DeleteMapping
-    public ResponseEntity<UserLogoutResponse> logoutUser(HttpServletRequest request) {
+    public void logoutUser(HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
         log.info("user logout request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
-        UserLogoutResponse response = userAuthService.logoutUser();
-        log.info("user logout response {}", response);
-        return ResponseEntity.ok(response);
+        userAuthService.logoutUser(httpServletResponse);
+        log.info("user logout response {}", httpServletResponse);
     }
 
     @PostMapping("refresh")
-    public ResponseEntity<UserRefreshSessionResponse> refreshSession(UserRefreshSessionRequest userRefreshSessionRequest) {
+    public void refreshSession(UserRefreshSessionRequest userRefreshSessionRequest, HttpServletResponse httpServletResponse) {
         log.info("user refresh session request {}", userRefreshSessionRequest);
-        UserRefreshSessionResponse response = userAuthService.refreshSession(userRefreshSessionRequest);
-        log.info("user refresh session response {}", response);
-        return ResponseEntity.ok(response);
+        userAuthService.refreshSession(userRefreshSessionRequest, httpServletResponse);
+        log.info("user refresh session response {}", httpServletResponse);
     }
 }

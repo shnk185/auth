@@ -1,13 +1,10 @@
 package org.ngs.auth.service;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.config.properties.ZaloAuthConfig;
 import org.ngs.auth.constant.Constants;
-import org.ngs.auth.constant.CookieConstants;
 import org.ngs.auth.constant.ZaloConstants;
-import org.ngs.auth.dto.Token;
 import org.ngs.auth.dto.external.ZaloAccessCodeResponse;
 import org.ngs.auth.dto.external.ZaloSocialResponse;
 import org.ngs.auth.entity.UserEntity;
@@ -17,7 +14,6 @@ import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.repository.UserZaloAuthRepository;
 import org.ngs.auth.service.external.zalo.ZaloAccessCodeService;
 import org.ngs.auth.service.external.zalo.ZaloSocialService;
-import org.ngs.auth.util.CookieUtil;
 import org.ngs.auth.util.RedisKeyUtil;
 import org.ngs.auth.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,10 +54,7 @@ public class UserZaloAuthService {
     private UserRepository userRepository;
 
     @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private TokenService tokenService;
+    private CookieService cookieService;
 
     public RedirectView redirectToZalo() {
         String codeVerifierToken = generateCodeVerifier();
@@ -114,12 +107,7 @@ public class UserZaloAuthService {
         }
 
         redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
-        Token accessToken = jwtService.generateToken(userEntity.getId(), null);
-        Cookie accessTokenCookie = CookieUtil.generateTokenCookie(CookieConstants.ACCESS_TOKEN, accessToken);
-        httpServletResponse.addCookie(accessTokenCookie);
-        Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
-        Cookie refreshTokenCookie = CookieUtil.generateTokenCookie(CookieConstants.REFRESH_TOKEN, refreshToken);
-        httpServletResponse.addCookie(refreshTokenCookie);
+        cookieService.setAccessAndRefreshTokenCookiesInResponse(userEntity.getId(), null, httpServletResponse);
         httpServletResponse.sendRedirect("/");
     }
 
