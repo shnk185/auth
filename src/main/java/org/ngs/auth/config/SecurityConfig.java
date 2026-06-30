@@ -30,11 +30,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/verify").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/sessions").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/sessions/email").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users/sessions/oauth/zalo").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users/sessions/oauth/zalo/callback").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/users/verify").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/sessions/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/sessions/refresh").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();

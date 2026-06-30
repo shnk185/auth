@@ -28,13 +28,6 @@ public class UserSessionController {
     @Autowired
     private UserAuthService userAuthService;
 
-    @PostMapping
-    public void loginUser(@RequestBody UserLoginRequest userLoginRequest, HttpServletResponse httpServletResponse) throws IOException {
-        log.info("user login request {}", userLoginRequest);
-        userAuthService.loginUser(userLoginRequest, httpServletResponse);
-        log.info("user login response {}", httpServletResponse);
-    }
-
     @DeleteMapping
     public void logoutUser(HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
         log.info("user logout request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
