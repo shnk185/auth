@@ -3,7 +3,9 @@ package org.ngs.auth.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.ngs.auth.dto.response.UserZaloCallbackResponse;
 import org.ngs.auth.service.UserZaloAuthService;
+import org.ngs.auth.util.CookieUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,8 +38,10 @@ public class UserOAuthZaloController {
                                                           @RequestParam("code_challenge") String codeChallenge,
                                                           HttpServletResponse httpServletResponse) throws IOException {
         log.info("user login with zalo callback code {} state {} codeChallenge {}", oauthCode, loginUUID, codeChallenge);
-        userZaloAuthService.handleZaloCallback(oauthCode, loginUUID, codeChallenge, httpServletResponse);
+        UserZaloCallbackResponse response = userZaloAuthService.handleZaloCallback(oauthCode, loginUUID, codeChallenge, httpServletResponse);
+        CookieUtil.setAccessAndRefreshTokenCookiesInResponse(response.getAccessToken(), response.getRefreshToken(),
+                httpServletResponse);
+        httpServletResponse.sendRedirect("/");
         log.info("user login with zalo callback successful {}", httpServletResponse);
     }
-
 }

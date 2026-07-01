@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserLogoutResponse {
-    public Long userId;
-    public boolean loggedOut;
-    public long loggedOutAt;
+    private Long userId;
+    private boolean loggedOut;
+    private long loggedOutAt;
 }

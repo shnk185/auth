@@ -8,6 +8,7 @@ import org.ngs.auth.constant.ZaloConstants;
 import org.ngs.auth.dto.Token;
 import org.ngs.auth.dto.external.ZaloAccessCodeResponse;
 import org.ngs.auth.dto.external.ZaloSocialResponse;
+import org.ngs.auth.dto.response.UserZaloCallbackResponse;
 import org.ngs.auth.entity.UserEntity;
 import org.ngs.auth.entity.UserZaloAuthEntity;
 import org.ngs.auth.enums.AuthMethod;
@@ -55,9 +56,6 @@ public class UserZaloAuthService {
     private UserRepository userRepository;
 
     @Autowired
-    private CookieService cookieService;
-
-    @Autowired
     private JwtService jwtService;
 
     @Autowired
@@ -93,7 +91,7 @@ public class UserZaloAuthService {
         return codeVerifier;
     }
 
-    public void handleZaloCallback(String oauthCode, String loginUUID, String codeChallenge, HttpServletResponse httpServletResponse) throws IOException {
+    public UserZaloCallbackResponse handleZaloCallback(String oauthCode, String loginUUID, String codeChallenge, HttpServletResponse httpServletResponse) throws IOException {
         String codeVerifierToken = redisTemplate.opsForValue().get(RedisKeyUtil.generateZaloCodeVerifierKey(loginUUID));
         validateCodeVerifier(codeChallenge, codeVerifierToken);
         ZaloAccessCodeResponse zaloAccessCodeResponse = zaloAccessCodeService.fetchAccessTokenFromCode(oauthCode, codeVerifierToken);
@@ -116,8 +114,7 @@ public class UserZaloAuthService {
         redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
         Token accessToken = jwtService.generateToken(userEntity.getId(), null);
         Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
-        cookieService.setAccessAndRefreshTokenCookiesInResponse(accessToken, refreshToken, httpServletResponse);
-        httpServletResponse.sendRedirect("/");
+        return new UserZaloCallbackResponse(accessToken, refreshToken);
     }
 
     private void validateCodeVerifier(String codeChallenge, String codeVerifierToken) {

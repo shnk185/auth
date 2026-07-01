@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserRefreshSessionRequest {
+public class UserRefreshSessionRequest extends BaseRequest {
     private String refreshToken;
 }

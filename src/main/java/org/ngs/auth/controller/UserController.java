@@ -10,6 +10,7 @@ import org.ngs.auth.dto.response.UserDeleteAccountResponse;
 import org.ngs.auth.dto.response.UserVerificationResponse;
 import org.ngs.auth.service.UserAuthService;
 import org.ngs.auth.service.UserEmailAuthService;
+import org.ngs.auth.util.CookieUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +50,7 @@ public class UserController {
     public void deleteAccount(HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
         log.info("user delete account request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
         UserDeleteAccountResponse response = userAuthService.deleteUser();
+        CookieUtil.removeAuthCookies(httpServletResponse);
         httpServletResponse.sendRedirect("/");
         log.info("user delete account response {}", response);
     }
