@@ -1,11 +1,12 @@
 package org.ngs.auth.service;
 
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
+import org.ngs.auth.dto.Token;
 import org.ngs.auth.dto.request.UserCreateRequest;
 import org.ngs.auth.dto.request.UserLoginRequest;
 import org.ngs.auth.dto.request.UserVerifyRequest;
 import org.ngs.auth.dto.response.UserCreateResponse;
+import org.ngs.auth.dto.response.UserLoginResponse;
 import org.ngs.auth.dto.response.UserVerificationResponse;
 import org.ngs.auth.entity.UserEmailAuthEntity;
 import org.ngs.auth.entity.UserEntity;
@@ -19,7 +20,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +46,10 @@ public class UserEmailAuthService {
     private EmailSenderService emailSenderService;
 
     @Autowired
-    private CookieService cookieService;
+    private JwtService jwtService;
+
+    @Autowired
+    private TokenService tokenService;
 
     @Transactional
     public UserCreateResponse createUser(UserCreateRequest userCreateRequest) {
@@ -83,7 +86,7 @@ public class UserEmailAuthService {
         return new UserVerificationResponse(userId, false, remainingAttempts);
     }
 
-    public void loginUser(UserLoginRequest userLoginRequest, HttpServletResponse httpServletResponse) throws IOException {
+    public UserLoginResponse loginUser(UserLoginRequest userLoginRequest) {
         if (userLoginRequest.getUserName() == null && userLoginRequest.getEmail() == null) {
             throw new RuntimeException("invalid credentials");
         }
@@ -107,9 +110,10 @@ public class UserEmailAuthService {
             throw new RuntimeException("invalid credentials");
         }
         redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
-        cookieService.setAccessAndRefreshTokenCookiesInResponse(userEntity.getId(), userEmailAuthEntity.getEmail(),
-                httpServletResponse);
-        httpServletResponse.sendRedirect("/");
+        Token accessToken = jwtService.generateToken(userEntity.getId(), userEmailAuthEntity.getEmail());
+        Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
+        return new UserLoginResponse(userEntity.getUserName(), userEmailAuthEntity.getEmail(), userEntity.getId(),
+                accessToken, refreshToken);
     }
 
     private void validateUser(UserEntity userEntity) {

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.dto.request.UserCreateRequest;
 import org.ngs.auth.dto.request.UserVerifyRequest;
 import org.ngs.auth.dto.response.UserCreateResponse;
+import org.ngs.auth.dto.response.UserDeleteAccountResponse;
 import org.ngs.auth.dto.response.UserVerificationResponse;
 import org.ngs.auth.service.UserAuthService;
 import org.ngs.auth.service.UserEmailAuthService;
@@ -47,7 +48,8 @@ public class UserController {
     @DeleteMapping
     public void deleteAccount(HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
         log.info("user delete account request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
-        userAuthService.deleteUser(httpServletResponse);
-        log.info("user delete account response {}", httpServletResponse);
+        UserDeleteAccountResponse response = userAuthService.deleteUser();
+        httpServletResponse.sendRedirect("/");
+        log.info("user delete account response {}", response);
     }
 }

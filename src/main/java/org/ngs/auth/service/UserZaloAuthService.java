@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.config.properties.ZaloAuthConfig;
 import org.ngs.auth.constant.Constants;
 import org.ngs.auth.constant.ZaloConstants;
+import org.ngs.auth.dto.Token;
 import org.ngs.auth.dto.external.ZaloAccessCodeResponse;
 import org.ngs.auth.dto.external.ZaloSocialResponse;
 import org.ngs.auth.entity.UserEntity;
@@ -55,6 +56,12 @@ public class UserZaloAuthService {
 
     @Autowired
     private CookieService cookieService;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private TokenService tokenService;
 
     public RedirectView redirectToZalo() {
         String codeVerifierToken = generateCodeVerifier();
@@ -107,7 +114,9 @@ public class UserZaloAuthService {
         }
 
         redisTemplate.delete(RedisKeyUtil.generateLogoutKey(userEntity.getId()));
-        cookieService.setAccessAndRefreshTokenCookiesInResponse(userEntity.getId(), null, httpServletResponse);
+        Token accessToken = jwtService.generateToken(userEntity.getId(), null);
+        Token refreshToken = tokenService.generateRefreshToken(userEntity.getId());
+        cookieService.setAccessAndRefreshTokenCookiesInResponse(accessToken, refreshToken, httpServletResponse);
         httpServletResponse.sendRedirect("/");
     }
 

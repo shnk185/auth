@@ -12,4 +12,5 @@ import org.ngs.auth.dto.Token;
 @NoArgsConstructor
 public class UserRefreshSessionResponse {
     private Token accessToken;
+    private Token refreshToken;
 }
