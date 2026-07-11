@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql-auth
+    container_name: mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -15,7 +15,7 @@ services:
 
   redis:
     image: redis:7.0
-    container_name: redis-auth
+    container_name: redis
     restart: unless-stopped
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
