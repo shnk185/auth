@@ -3,6 +3,7 @@ package org.ngs.auth.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.ngs.auth.config.properties.RedirectUrlConfig;
 import org.ngs.auth.dto.request.UserRefreshSessionRequest;
 import org.ngs.auth.dto.response.UserLogoutResponse;
 import org.ngs.auth.dto.response.UserRefreshSessionResponse;
@@ -25,13 +26,16 @@ public class UserSessionController {
     @Autowired
     private UserAuthService userAuthService;
 
+    @Autowired
+    private RedirectUrlConfig redirectUrlConfig;
+
 
     @DeleteMapping
     public void logoutUser(HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
         log.info("user logout request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
         UserLogoutResponse response = userAuthService.logoutUser();
         CookieUtil.removeAuthCookies(httpServletResponse);
-        httpServletResponse.sendRedirect("/");
+        httpServletResponse.sendRedirect(redirectUrlConfig.getHomePage());
         log.info("user logout response {}", response);
     }
 

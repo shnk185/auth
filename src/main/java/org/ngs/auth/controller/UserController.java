@@ -3,6 +3,7 @@ package org.ngs.auth.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.ngs.auth.config.properties.RedirectUrlConfig;
 import org.ngs.auth.dto.request.UserCreateRequest;
 import org.ngs.auth.dto.request.UserVerifyRequest;
 import org.ngs.auth.dto.response.UserCreateResponse;
@@ -29,6 +30,9 @@ public class UserController {
     @Autowired
     private UserEmailAuthService userEmailAuthService;
 
+    @Autowired
+    private RedirectUrlConfig redirectUrlConfig;
+
 
     @PostMapping
     public ResponseEntity<UserCreateResponse> createUser(@RequestBody UserCreateRequest userCreateRequest) {
@@ -51,7 +55,7 @@ public class UserController {
         log.info("user delete account request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
         UserDeleteAccountResponse response = userAuthService.deleteUser();
         CookieUtil.removeAuthCookies(httpServletResponse);
-        httpServletResponse.sendRedirect("/");
+        httpServletResponse.sendRedirect(redirectUrlConfig.getHomePage());
         log.info("user delete account response {}", response);
     }
 }

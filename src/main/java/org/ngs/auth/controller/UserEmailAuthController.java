@@ -2,6 +2,7 @@ package org.ngs.auth.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.ngs.auth.config.properties.RedirectUrlConfig;
 import org.ngs.auth.dto.request.UserLoginRequest;
 import org.ngs.auth.dto.response.UserLoginResponse;
 import org.ngs.auth.service.UserEmailAuthService;
@@ -22,13 +23,16 @@ public class UserEmailAuthController {
     @Autowired
     private UserEmailAuthService userEmailAuthService;
 
+    @Autowired
+    private RedirectUrlConfig redirectUrlConfig;
+
     @PostMapping
     public void loginUser(@RequestBody UserLoginRequest userLoginRequest, HttpServletResponse httpServletResponse) throws IOException {
         log.info("user login request {}", userLoginRequest);
         UserLoginResponse response = userEmailAuthService.loginUser(userLoginRequest);
         CookieUtil.setAccessAndRefreshTokenCookiesInResponse(response.getAccessToken(), response.getRefreshToken(),
                 httpServletResponse);
-        httpServletResponse.sendRedirect("/");
+        httpServletResponse.sendRedirect(redirectUrlConfig.getProblemSetPage());
         log.info("user login response {}", httpServletResponse);
     }
 }

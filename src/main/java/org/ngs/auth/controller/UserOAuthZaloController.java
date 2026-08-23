@@ -3,10 +3,12 @@ package org.ngs.auth.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.ngs.auth.config.properties.RedirectUrlConfig;
 import org.ngs.auth.dto.response.UserZaloCallbackResponse;
 import org.ngs.auth.service.UserZaloAuthService;
 import org.ngs.auth.util.CookieUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +25,9 @@ public class UserOAuthZaloController {
 
     @Autowired
     private UserZaloAuthService userZaloAuthService;
+
+    @Autowired
+    private RedirectUrlConfig redirectUrlConfig;
 
     @GetMapping("/zalo")
     public RedirectView loginWithZalo(HttpServletRequest request) {
@@ -41,7 +46,7 @@ public class UserOAuthZaloController {
         UserZaloCallbackResponse response = userZaloAuthService.handleZaloCallback(oauthCode, loginUUID, codeChallenge, httpServletResponse);
         CookieUtil.setAccessAndRefreshTokenCookiesInResponse(response.getAccessToken(), response.getRefreshToken(),
                 httpServletResponse);
-        httpServletResponse.sendRedirect("/");
+        httpServletResponse.sendRedirect(redirectUrlConfig.getProblemSetPage());
         log.info("user login with zalo callback successful {}", httpServletResponse);
     }
 }
