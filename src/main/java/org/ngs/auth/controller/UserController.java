@@ -3,11 +3,11 @@ package org.ngs.auth.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.ngs.auth.config.properties.RedirectUrlConfig;
 import org.ngs.auth.dto.request.UserCreateRequest;
 import org.ngs.auth.dto.request.UserVerifyRequest;
 import org.ngs.auth.dto.response.UserCreateResponse;
 import org.ngs.auth.dto.response.UserDeleteAccountResponse;
+import org.ngs.auth.dto.response.UserInfoResponse;
 import org.ngs.auth.dto.response.UserVerificationResponse;
 import org.ngs.auth.service.UserAuthService;
 import org.ngs.auth.service.UserEmailAuthService;
@@ -29,9 +29,6 @@ public class UserController {
 
     @Autowired
     private UserEmailAuthService userEmailAuthService;
-
-    @Autowired
-    private RedirectUrlConfig redirectUrlConfig;
 
 
     @PostMapping
@@ -55,7 +52,14 @@ public class UserController {
         log.info("user delete account request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
         UserDeleteAccountResponse response = userAuthService.deleteUser();
         CookieUtil.removeAuthCookies(httpServletResponse);
-        httpServletResponse.sendRedirect(redirectUrlConfig.getHomePage());
         log.info("user delete account response {}", response);
+    }
+
+    @GetMapping
+    public ResponseEntity<UserInfoResponse> fetchUserInfo(HttpServletRequest request) {
+        log.info("user info fetch request {}", request.getHeader(HttpHeaders.AUTHORIZATION));
+        UserInfoResponse response = userAuthService.fetchUserInfo();
+        log.info("user info response {}", response);
+        return ResponseEntity.ok(response);
     }
 }

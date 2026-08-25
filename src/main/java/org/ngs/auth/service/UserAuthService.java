@@ -4,10 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.ngs.auth.dto.Token;
 import org.ngs.auth.dto.request.UserRefreshSessionRequest;
 import org.ngs.auth.dto.response.UserDeleteAccountResponse;
+import org.ngs.auth.dto.response.UserInfoResponse;
 import org.ngs.auth.dto.response.UserLogoutResponse;
 import org.ngs.auth.dto.response.UserRefreshSessionResponse;
 import org.ngs.auth.entity.UserEmailAuthEntity;
 import org.ngs.auth.entity.UserEntity;
+import org.ngs.auth.enums.AuthMethod;
 import org.ngs.auth.repository.UserEmailAuthRepository;
 import org.ngs.auth.repository.UserRepository;
 import org.ngs.auth.util.RedisKeyUtil;
@@ -69,5 +71,19 @@ public class UserAuthService {
         userEntity.setDeleted(true);
         userRepository.save(userEntity);
         return new UserDeleteAccountResponse(userId, true);
+    }
+
+    public UserInfoResponse fetchUserInfo() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
+        UserEntity userEntity = userRepository.findByIdAndDeletedFalse(userId).orElseThrow();
+        UserInfoResponse userInfoResponse = UserInfoResponse.builder().userId(userEntity.getId())
+                .authMethod(userEntity.getAuthMethod()).userName(userEntity.getUserName())
+                .build();
+        if (AuthMethod.EMAIL.equals(userEntity.getAuthMethod())) {
+            UserEmailAuthEntity userEmailAuthEntity = userEmailAuthRepository.findByUserId(userId);
+            userInfoResponse.setEmail(userEmailAuthEntity.getEmail());
+        }
+        return userInfoResponse;
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -38,7 +39,7 @@ public class TokenService {
         UserTokenMappingEntity userTokenMappingEntity = new UserTokenMappingEntity(userId, tokenHash, TokenType.REFRESH,
                 expiry, null);
         userTokenMappingRepository.save(userTokenMappingEntity);
-        return new Token(TokenType.REFRESH, generatedToken, expiry, refreshTokenExpirationTimeMs);
+        return new Token(TokenType.REFRESH, generatedToken, expiry, TimeUnit.MILLISECONDS.toSeconds(refreshTokenExpirationTimeMs));
     }
 
     public String generateToken() {
