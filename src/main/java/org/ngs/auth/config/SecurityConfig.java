@@ -34,6 +34,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/users/sessions/oauth/zalo").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users/sessions/oauth/zalo/callback").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/sessions/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
