@@ -8,6 +8,6 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "redirect.url")
 public class RedirectUrlConfig {
-    private String problemSetPage;
+    private String redirectPage;
     private String homePage;
 }

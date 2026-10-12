@@ -8,7 +8,6 @@ import org.ngs.auth.dto.response.UserZaloCallbackResponse;
 import org.ngs.auth.service.UserZaloAuthService;
 import org.ngs.auth.util.CookieUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,7 +45,7 @@ public class UserOAuthZaloController {
         UserZaloCallbackResponse response = userZaloAuthService.handleZaloCallback(oauthCode, loginUUID, codeChallenge, httpServletResponse);
         CookieUtil.setAccessAndRefreshTokenCookiesInResponse(response.getAccessToken(), response.getRefreshToken(),
                 httpServletResponse);
-        httpServletResponse.sendRedirect(redirectUrlConfig.getProblemSetPage());
+        httpServletResponse.sendRedirect(redirectUrlConfig.getRedirectPage());
         log.info("user login with zalo callback successful {}", httpServletResponse);
     }
 }
